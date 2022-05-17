@@ -20,9 +20,10 @@ import (
 	"github.com/farshad-barahimi-academic-codes/chocolate-lvsde/DataAbstraction"
 	"math"
 	"sort"
+	"strconv"
 )
 
-func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAbstractionUnitVisibility, numberOfNeighbours int, evaluationLayers []string, evaluationNeighboursLayers []string) float64 {
+func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAbstractionUnitVisibility, numberOfNeighbours int, evaluationLayers []string, evaluationNeighboursLayers []string, precision int) string {
 	numberOfDataAbstractionUnits := len(dataAbstractionUnitVisibilities)
 	var corrects int = 0
 	var incorrects = 0
@@ -82,7 +83,7 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAb
 				for t := 0; t < numberOfNeighbours; t++ {
 					a, _ := queue.Dequeue()
 					if a == nil {
-						panic("Not finished successfully.")
+						return "(Not enough neighbours),(Not enough neighbours),(Not enough neighbours)"
 					}
 					neighbourIndex := a.([]int)[0]
 					if neighbourIndex != i {
@@ -120,5 +121,12 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAb
 		}
 	}
 
-	return 100.0 * (float64(corrects) / float64(corrects+incorrects))
+	var percent float64 = math.NaN()
+
+	if corrects+incorrects > 0 {
+		percent = 100.0 * (float64(corrects) / float64(corrects+incorrects))
+	}
+
+	return strconv.FormatFloat(percent, 'f', precision, 64) + "%," +
+		strconv.Itoa(corrects) + "," + strconv.Itoa(incorrects)
 }

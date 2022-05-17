@@ -261,7 +261,7 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 				output.append(float(twoDimUMAP[i,j]))
 		print('Two dimensional UMAP for comparison finished.')
 		print('Performing t-SNE to 2 dimensions for comparison...')
-		twoDimTSNE=TSNE(n_components=2, init='random', learning_rate='auto', method='exact', random_state=%d%s).fit_transform(input)
+		twoDimTSNE=TSNE(n_components=2, init='random', learning_rate='auto', method='barnes_hut', random_state=%d%s).fit_transform(input)
 		for i in range(0,numberOfDataAbstractionUnitsOutput):
 			for j in range(0,2):
 				output.append(float(twoDimTSNE[i,j]))
@@ -482,7 +482,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.0"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.1"
 
 		lastIteration := 1829
 
@@ -536,136 +536,115 @@ def SomeDimensionalityReductions(*x):
 			fmt.Println("Please wait...")
 		}
 
+		var embeddingCompare1 []*DataAbstraction.DataAbstractionUnitVisibility
+		var embeddingCompare2 []*DataAbstraction.DataAbstractionUnitVisibility
+
+		if compareWithOtherMethods {
+
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare"), 600)
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding"), 600)
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding"), 600)
+
+			embeddingCompare1 = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
+
+			for j := 0; j < len(dataAbstractionSet.DataAbstractionUnits); j++ {
+				dataAbstractionUnit := &dataAbstractionSet.DataAbstractionUnits[j]
+				dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer = true
+				embeddingCompare1[j] = dataAbstractionUnit.ToDataAbstractionUnitVisibility(1, "UMAP")
+			}
+
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare1, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "colouring_0.png"), 0, &dataAbstractionSet, coloursList)
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare1, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "colouring_1.png"), 1, &dataAbstractionSet, coloursList)
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare1, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "colouring_2.png"), 2, &dataAbstractionSet, coloursList)
+			if embeddingSpecification.ImagesFileGrayscaleSingleChannel != "" || embeddingSpecification.ImagesFileRedGreenBlueChannels != "" {
+				FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare1, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "colouring_3.png"), 3, &dataAbstractionSet, coloursList)
+				FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare1, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "colouring_4.png"), 4, &dataAbstractionSet, coloursList)
+			}
+
+			jsonBytes, _ = json.MarshalIndent(embeddingCompare1, "", "\t")
+			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "compare_embedding.json"), jsonBytes, 640)
+
+			embeddingCompare2 = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
+
+			for j := 0; j < len(dataAbstractionSet.DataAbstractionUnits); j++ {
+				dataAbstractionUnit := &dataAbstractionSet.DataAbstractionUnits[j]
+				dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer = true
+				embeddingCompare2[j] = dataAbstractionUnit.ToDataAbstractionUnitVisibility(1, "t-SNE")
+			}
+
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare2, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "colouring_0.png"), 0, &dataAbstractionSet, coloursList)
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare2, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "colouring_1.png"), 1, &dataAbstractionSet, coloursList)
+			FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare2, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "colouring_2.png"), 2, &dataAbstractionSet, coloursList)
+			if embeddingSpecification.ImagesFileGrayscaleSingleChannel != "" || embeddingSpecification.ImagesFileRedGreenBlueChannels != "" {
+				FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare2, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "colouring_3.png"), 3, &dataAbstractionSet, coloursList)
+				FileReadingOrWriting.WriteEmbeddingToFile(embeddingCompare2, filepath.Join(embeddingSpecification.OutputDirectory, "compare, \"t-SNE (Barnes Hut variant) embedding\"", "colouring_4.png"), 4, &dataAbstractionSet, coloursList)
+			}
+
+			jsonBytes, _ = json.MarshalIndent(embeddingCompare2, "", "\t")
+			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "compare_embedding.json"), jsonBytes, 640)
+		}
+
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
 			evaluationCSV := strings.Builder{}
+
+			evaluationCSV.WriteString("Statistical_evaluation_type, Evaluation_neighbourhood_size, Embedding technique, Percent (rounded to 3 decimal places), Correct, Incorrects\r\n")
 
 			for _, evaluationNeighbourhoodSize := range embeddingSpecification.EvaluationNeighbourhoodSizes {
 				k, err := strconv.Atoi(evaluationNeighbourhoodSize)
 				if err != nil {
 					panic("Not finished successfully.")
 				}
-				evaluationCSV.WriteString("Evaluation_type,Evaluation_neighbourhood_size,Evaluation\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red_and_gray)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+
+				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red", "gray"}, []string{"red", "gray"}), 'f', 3, 64) + "%\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+						[]string{"red", "gray"}, []string{"red", "gray"}, 3) + "\r\n")
+				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red", "gray"}, []string{"red"}), 'f', 3, 64) + "%\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(red)_(red)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+						[]string{"red", "gray"}, []string{"red"}, 3) + "\r\n")
+				evaluationCSV.WriteString("KNN_accuracy_(red)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red"}, []string{"red"}), 'f', 3, 64) + "%\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(gray)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+						[]string{"red"}, []string{"red"}, 3) + "\r\n")
+				evaluationCSV.WriteString("KNN_accuracy_(gray)_(gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"gray"}), 'f', 3, 64) + "%\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+						[]string{"gray"}, []string{"gray"}, 3) + "\r\n")
+				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"red"}), 'f', 3, 64) + "%\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red_and_gray)," + evaluationNeighbourhoodSize + "," +
-					strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
+						[]string{"gray"}, []string{"red"}, 3) + "\r\n")
+				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					DataEmbedding.EvaluateEmbedding(
 						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"red", "gray"}), 'f', 3, 64) + "%\r\n")
+						[]string{"gray"}, []string{"red", "gray"}, 3) + "\r\n")
+
+				evaluationCSV.WriteString("#, #, #, #\r\n")
+
+				evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ",UMAP," +
+					DataEmbedding.EvaluateEmbedding(
+						embeddingCompare1, k,
+						[]string{"NA"}, []string{"NA"}, 3) + "\r\n")
+
+				evaluationCSV.WriteString("#, #, #, #\r\n")
+
+				evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ", t-SNE (Barnes Hut variant)," +
+					DataEmbedding.EvaluateEmbedding(
+						embeddingCompare2, k,
+						[]string{"NA"}, []string{"NA"}, 3) + "\r\n")
+
+				evaluationCSV.WriteString("#, #, #, #\r\n")
 			}
 
-			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "evaluation.csv"), []byte(evaluationCSV.String()), 600)
+			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "report.csv"), []byte(evaluationCSV.String()), 600)
 			if err != nil {
 				panic("Not finished successfully.")
 			}
 		}
 
-		if compareWithOtherMethods {
-			_, err := os.Stat(filepath.Join(embeddingSpecification.OutputDirectory, "compare"))
-			if os.IsNotExist(err) {
-				os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare"), 600)
-			}
-
-			embedding := make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
-
-			for j := 0; j < len(dataAbstractionSet.DataAbstractionUnits); j++ {
-				dataAbstractionUnit := &dataAbstractionSet.DataAbstractionUnits[j]
-				dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer = true
-				embedding[j] = dataAbstractionUnit.ToDataAbstractionUnitVisibility(1, "UMAP")
-			}
-
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_colouring_0.png"), 0, &dataAbstractionSet, coloursList)
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_colouring_1.png"), 1, &dataAbstractionSet, coloursList)
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_colouring_2.png"), 2, &dataAbstractionSet, coloursList)
-			if embeddingSpecification.ImagesFileGrayscaleSingleChannel != "" || embeddingSpecification.ImagesFileRedGreenBlueChannels != "" {
-				FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_iteration_colouring_3.png"), 3, &dataAbstractionSet, coloursList)
-				FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_iteration_colouring_4.png"), 4, &dataAbstractionSet, coloursList)
-			}
-
-			jsonBytes, _ = json.MarshalIndent(embedding, "", "\t")
-			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP_embedding.json"), jsonBytes, 640)
-
-			if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
-				evaluationCSV := strings.Builder{}
-
-				for _, evaluationNeighbourhoodSize := range embeddingSpecification.EvaluationNeighbourhoodSizes {
-					k, err := strconv.Atoi(evaluationNeighbourhoodSize)
-					if err != nil {
-						panic("Not finished successfully.")
-					}
-					evaluationCSV.WriteString("Evaluation_type,Evaluation_neighbourhood_size,Evaluation\r\n")
-					evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + "," +
-						strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
-							embedding, k,
-							[]string{"NA"}, []string{"NA"}), 'f', 3, 64) + "%\r\n")
-				}
-
-				err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "evaluation_UMAP.csv"), []byte(evaluationCSV.String()), 600)
-				if err != nil {
-					panic("Not finished successfully.")
-				}
-			}
-
-			embedding = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
-
-			for j := 0; j < len(dataAbstractionSet.DataAbstractionUnits); j++ {
-				dataAbstractionUnit := &dataAbstractionSet.DataAbstractionUnits[j]
-				dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer = true
-				embedding[j] = dataAbstractionUnit.ToDataAbstractionUnitVisibility(1, "t-SNE")
-			}
-
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_colouring_0.png"), 0, &dataAbstractionSet, coloursList)
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_colouring_1.png"), 1, &dataAbstractionSet, coloursList)
-			FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_colouring_2.png"), 2, &dataAbstractionSet, coloursList)
-			if embeddingSpecification.ImagesFileGrayscaleSingleChannel != "" || embeddingSpecification.ImagesFileRedGreenBlueChannels != "" {
-				FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_iteration_colouring_3.png"), 3, &dataAbstractionSet, coloursList)
-				FileReadingOrWriting.WriteEmbeddingToFile(embedding, filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_iteration_colouring_4.png"), 4, &dataAbstractionSet, coloursList)
-			}
-
-			jsonBytes, _ = json.MarshalIndent(embedding, "", "\t")
-			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE_embedding.json"), jsonBytes, 640)
-
-			if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
-				evaluationCSV := strings.Builder{}
-
-				for _, evaluationNeighbourhoodSize := range embeddingSpecification.EvaluationNeighbourhoodSizes {
-					k, err := strconv.Atoi(evaluationNeighbourhoodSize)
-					if err != nil {
-						panic("Not finished successfully.")
-					}
-					evaluationCSV.WriteString("Evaluation_type,Evaluation_neighbourhood_size,Evaluation\r\n")
-					evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + "," +
-						strconv.FormatFloat(DataEmbedding.EvaluateEmbedding(
-							embedding, k,
-							[]string{"NA"}, []string{"NA"}), 'f', 3, 64) + "%\r\n")
-				}
-
-				err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "evaluation_t-SNE.csv"), []byte(evaluationCSV.String()), 600)
-				if err != nil {
-					panic("Not finished successfully.")
-				}
-			}
-		}
-
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 || compareWithOtherMethods {
-			fmt.Println("Finished processing the embedding specification file.")
+			fmt.Println("Finished processing the embedding specification.")
 		}
 	}
 }

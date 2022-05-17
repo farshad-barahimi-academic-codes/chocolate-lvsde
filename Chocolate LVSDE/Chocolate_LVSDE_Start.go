@@ -43,7 +43,7 @@ import (
 	To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
 */
 func main() {
-	fmt.Println("Chocolate LVSDE 1.0")
+	fmt.Println("Chocolate LVSDE 1.1")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")
@@ -55,6 +55,9 @@ func main() {
 	} else if len(args) == 2 {
 		embeddingSpecificationsFilePath := args[1]
 		embeddingSpecifications := EmbeddingSpecification.ReadEmbeddingSpecification(embeddingSpecificationsFilePath)
+		if len(embeddingSpecifications.EmbeddingSpecifications) > 1 {
+			panic("Not finished successfully")
+		}
 		EmbeddingSpecification.RunEmbeddingSpecifications(embeddingSpecifications.EmbeddingSpecifications[0:1])
 	} else {
 		fmt.Println("Incorrect number of arguments")
