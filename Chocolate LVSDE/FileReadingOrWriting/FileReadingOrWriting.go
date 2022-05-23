@@ -577,8 +577,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	document.querySelector("#canvas").addEventListener('mousedown', e => {
 		if(e.which==1){
-			let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left;
-			let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top;
+			let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+			let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
 			const blue=document.querySelector("#blue")
 			blue.style.left=x.toString()+'px'
 			blue.style.top=y.toString()+'px'
@@ -591,11 +591,11 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	document.querySelector("#canvas").addEventListener('mousemove', e => {
 		if(e.which==1){
-			let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left;
-			let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top;
+			let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+			let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
 			const blue=document.querySelector("#blue")
-			let width= Math.max(0, x- blue.getBoundingClientRect().left)
-			let height= Math.max(0, y- blue.getBoundingClientRect().top)
+			let width= Math.max(0, x- blue.getBoundingClientRect().left - window.scrollX)
+			let height= Math.max(0, y- blue.getBoundingClientRect().top - window.scrollY)
 			blue.style.width=width.toString()+'px'
 			blue.style.height=height.toString()+'px'
 		}
@@ -603,11 +603,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	document.querySelector("#canvas").addEventListener('mouseup', e => {
 		if(e.which==1){
+			let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+			let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
 			const blue=document.querySelector("#blue")
-			let x=blue.getBoundingClientRect().left - document.querySelector("#canvas").getBoundingClientRect().left
-			let y=blue.getBoundingClientRect().top - document.querySelector("#canvas").getBoundingClientRect().top
-			let width=blue.clientWidth
-			let height=blue.clientHeight
+			let width= Math.max(0, x- blue.getBoundingClientRect().left - window.scrollX)
+			let height= Math.max(0, y- blue.getBoundingClientRect().top - window.scrollY)
+			blue.style.width=width.toString()+'px'
+			blue.style.height=height.toString()+'px'
+			x = blue.getBoundingClientRect().left - document.querySelector("#canvas").getBoundingClientRect().left
+			y = blue.getBoundingClientRect().top - document.querySelector("#canvas").getBoundingClientRect().top
 			document.querySelector("#log").innerHTML='Please wait...'
 			updateBasedOnSelection(x,y,width,height)
 			document.querySelector("#log").innerHTML='(x:'+x.toString()+', y:'+y.toString()+', w:'+width.toString()+', h:'+height.toString()+')'
@@ -627,6 +631,8 @@ let numberOfDataAbstractionUnits=0
 let colouringOption=0
 let sizeOption=0
 let overlapReductionRounds=20
+let overlapReductionRoundsOption=0
+let yellowOption=true
 
 function readData(bsonFileContentZipped){
 	
@@ -635,13 +641,13 @@ function readData(bsonFileContentZipped){
 		zip.file("embedding_details.bson").async("uint8array",function updateCallback(metadata) {
 			document.querySelector("#log").innerHTML='Please wait... ' + (metadata.percent/2).toFixed(1) + '%';}).then(function (bsonFileContent) {
 			const embeddingDetails = BSON.deserialize(bsonFileContent);
-    
-			console.log('embeddingDetails:', embeddingDetails);
+
 			iterationsData=[]
 			coloursList=embeddingDetails['colours_list']
 			let imagesGrayscale=embeddingDetails['images_grayscale_single_channel']
 			let imagesRedGreenBlueChannels=embeddingDetails['images_red_green_blue_channels']
 			imagesWidth=embeddingDetails['image_width']
+			
 			numberOfDataAbstractionUnits=embeddingDetails['embedding_iterations'][0].length
 			for (let iteration=0;iteration<1830;iteration++){
 				iterationsData.push([])
@@ -652,8 +658,6 @@ function readData(bsonFileContentZipped){
 					}
 				}
 			}
-
-			console.log('iterationsData:',iterationsData)
 
 			if(imagesGrayscale.length>0){
 				for(let i=0;i<numberOfDataAbstractionUnits;i++){
@@ -776,6 +780,7 @@ function showData(){
 	document.querySelector("#reduce-overlap-button").style.display='inline-block'
 	document.querySelector("#change-sizing-button").style.display='inline-block'
 	document.querySelector("#change-overlap-reduction-rounds-button").style.display='inline-block'
+	document.querySelector("#change-yellow-option").style.display='inline-block'
 
 	document.querySelector("#prev-button").addEventListener('click', function() {
 		if(currentIteration>0){
@@ -859,12 +864,22 @@ function showData(){
 	});
 
 	document.querySelector("#change-overlap-reduction-rounds-button").addEventListener('click', function() {
-		overlapReductionRounds=(overlapReductionRounds+1)%4
+		overlapReductionRoundsOption=(overlapReductionRoundsOption+1)%4
+		overlapReductionRounds=[20,40,60,80][overlapReductionRoundsOption]
 
 		document.querySelector("#log").innerHTML='Please wait...'
 		showIteration(currentIteration);
 		logCurrentIteration()
 	});
+
+	document.querySelector("#change-yellow-option").addEventListener('click', function() {
+		yellowOption=!yellowOption
+
+		document.querySelector("#log").innerHTML='Please wait...'
+		showIteration(currentIteration);
+		logCurrentIteration()
+	});
+	
 }
 
 function logCurrentIteration(){
@@ -903,16 +918,19 @@ function showDataOnCanvas(data,canvas) {
 		
 	}
 
+	let sizes=[1000,2000,750,1500]
+	let contextWidth = sizes[sizeOption]
+	let contextHeight = sizes[sizeOption]
+
+	let multiplicationFactor = (contextWidth / (xHigh - xLow))
+	multiplicationFactor = Math.min(multiplicationFactor, (contextHeight) / (yHigh - yLow))
+
 	let insideMargin=15
 	if(images.length>0)
 		insideMargin=imagesWidth/2+5
 
-	let sizes=[1000,2000,750,1500]
-	let contextWidth = sizes[sizeOption]+insideMargin*2
-	let contextHeight = sizes[sizeOption]+insideMargin*2
-
-	let multiplicationFactor = (contextWidth / (xHigh - xLow))
-	multiplicationFactor = Math.min(multiplicationFactor, (contextHeight) / (yHigh - yLow))
+	contextWidth+=insideMargin*2
+	contextHeight+=insideMargin*2
 
 	let popup=true
 
@@ -978,7 +996,7 @@ function showDataOnCanvas(data,canvas) {
 						context.putImageData(imagesRed[ind],x-imagesWidth/2,y-imagesHeight/2)
 				}
 				
-				if(data[i][9] && round==3){
+				if(data[i][9] && round==3 && yellowOption){
 					context.strokeStyle = 'yellow';
 					context.rect(x-imagesWidth/2-1,y-imagesHeight/2-1,imagesWidth+2,imagesHeight+2)
 					context.lineWidth = 2;
@@ -989,7 +1007,7 @@ function showDataOnCanvas(data,canvas) {
 				if(round!=3)
 					context.putImageData(images[ind],x-imagesWidth/2,y-imagesHeight/2)
 				
-				if(data[i][9] && round==3){
+				if(data[i][9] && round==3 && yellowOption){
 					context.strokeStyle = 'yellow';
 					context.rect(x-imagesWidth/2-1,y-imagesHeight/2-1,imagesWidth+2,imagesHeight+2)
 					context.lineWidth = 2;
@@ -1019,7 +1037,7 @@ function showDataOnCanvas(data,canvas) {
 					
 					context.closePath();
 				} 
-				else if(data[i][9]){
+				else if(data[i][9] && yellowOption){
 					context.beginPath();
 					context.arc(x, y, radius, 0, 2 * Math.PI);
 					context.fillStyle = 'none'
@@ -1045,7 +1063,7 @@ function showDataOnCanvas(data,canvas) {
 					
 					context.closePath();
 				}
-				else if(data[i][9]){
+				else if(data[i][9] && yellowOption){
 					context.beginPath();
 					context.arc(x, y, radius, 0, 2 * Math.PI);
 					context.fillStyle = 'none'
@@ -1071,7 +1089,7 @@ function showDataOnCanvas(data,canvas) {
 					
 					context.closePath();
 				}
-				else if(data[i][9]){
+				else if(data[i][9] && yellowOption){
 					context.beginPath();
 					context.arc(x, y, radius, 0, 2 * Math.PI);
 					context.fillStyle = 'none'
@@ -1230,8 +1248,14 @@ function reduceOverlap(rounds){
 	let data=iterationsData[currentIteration]
 	let dataCopy=[]
 	for(let i=0;i<data.length;i++){
-		if(data[i][8])
+		if(data[i][8]){
+			let tempData=data[i].slice()
+			if(images.length>0 && colouringOption>2){
+				tempData[2]=imagesWidth
+				tempData[3]=imagesHeight
+			}
 			dataCopy.push(data[i].slice())
+		}
 	}
 
 	for(let i=0;i<rounds;i++)
@@ -1380,6 +1404,7 @@ function reduceOverlapMove(dataCopy){
 	html.WriteString("<button id=\"reduce-overlap-button\" style=\"display:none;\">Reduce overlap</button>\r\n")
 	html.WriteString("<button id=\"change-sizing-button\" style=\"display:none;\">Change sizing</button>\r\n")
 	html.WriteString("<button id=\"change-overlap-reduction-rounds-button\" style=\"display:none;\">Change overlap reduction rounds</button>\r\n")
+	html.WriteString("<button id=\"change-yellow-option\" style=\"display:none;\">Change yellow option</button>\r\n")
 	html.WriteString("</div>\r\n")
 	html.WriteString("<div>\r\n")
 	html.WriteString("<canvas id=\"canvas\" style=\"position:absolute;\"></canvas>\r\n")
