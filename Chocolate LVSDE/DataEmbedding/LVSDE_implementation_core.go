@@ -164,12 +164,12 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) EmbedData(dataAb
 			}
 		}
 
-		dataEmbeddingTechniqueLVSDE.ChangePhaseIfRequired()
-
 		dataEmbeddingTechniqueLVSDE.EmbeddingDetails.EmbeddingIterations[dataEmbeddingTechniqueLVSDE.Iteration-1] = make([]*DataAbstraction.DataAbstractionUnitVisibility, numberOfDataAbstractionUnits)
 		for i = 0; i < numberOfDataAbstractionUnits; i++ {
 			dataEmbeddingTechniqueLVSDE.EmbeddingDetails.EmbeddingIterations[dataEmbeddingTechniqueLVSDE.Iteration-1][i] = dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits[i].ToDataAbstractionUnitVisibility(dataEmbeddingTechniqueLVSDE.Iteration, "LVSDE")
 		}
+
+		dataEmbeddingTechniqueLVSDE.ChangePhaseIfRequired()
 	}
 }
 
