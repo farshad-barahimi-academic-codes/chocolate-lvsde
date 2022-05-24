@@ -482,7 +482,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.3"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.4"
 
 		lastIteration := 1829
 
@@ -585,9 +585,10 @@ def SomeDimensionalityReductions(*x):
 		}
 
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
-			evaluationCSV := strings.Builder{}
+			report := strings.Builder{}
+			confusionMatrices := strings.Builder{}
 
-			evaluationCSV.WriteString("Statistical_evaluation_type, Evaluation_neighbourhood_size, Embedding technique, Percent (rounded to 3 decimal places), Correct, Incorrects\r\n")
+			report.WriteString("Statistical_evaluation_type, Evaluation_neighbourhood_size, Embedding technique, Percent (rounded to 3 decimal places), Correct, Incorrects\r\n")
 
 			for _, evaluationNeighbourhoodSize := range embeddingSpecification.EvaluationNeighbourhoodSizes {
 				k, err := strconv.Atoi(evaluationNeighbourhoodSize)
@@ -595,49 +596,89 @@ def SomeDimensionalityReductions(*x):
 					panic("Not finished successfully.")
 				}
 
-				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red", "gray"}, []string{"red", "gray"}, 3) + "\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(red_and_gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red", "gray"}, []string{"red"}, 3) + "\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(red)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"red"}, []string{"red"}, 3) + "\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"gray"}, 3) + "\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"red"}, 3) + "\r\n")
-				evaluationCSV.WriteString("KNN_accuracy_(gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingDetails.EmbeddingIterations[lastIteration], k,
-						[]string{"gray"}, []string{"red", "gray"}, 3) + "\r\n")
+				evaluation := DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"red", "gray"}, []string{"red", "gray"}, 3)
+				report.WriteString("KNN_accuracy_(red_and_gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers:(red_and_gray)\r\nClassification layers: (red_and_gray)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
 
-				evaluationCSV.WriteString("#, #, #, #\r\n")
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"red", "gray"}, []string{"red"}, 3)
 
-				evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ",UMAP," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingCompare1, k,
-						[]string{"NA"}, []string{"NA"}, 3) + "\r\n")
+				report.WriteString("KNN_accuracy_(red_and_gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: (red_and_gray)\r\nClassification layers: (red)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
 
-				evaluationCSV.WriteString("#, #, #, #\r\n")
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"red"}, []string{"red"}, 3)
 
-				evaluationCSV.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ", t-SNE (Barnes Hut variant)," +
-					DataEmbedding.EvaluateEmbedding(
-						embeddingCompare2, k,
-						[]string{"NA"}, []string{"NA"}, 3) + "\r\n")
+				report.WriteString("KNN_accuracy_(red)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: (red)\r\nClassification layers: (red)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
 
-				evaluationCSV.WriteString("#, #, #, #\r\n")
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"gray"}, []string{"gray"}, 3)
+
+				report.WriteString("KNN_accuracy_(gray)_(gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: (gray)\r\nClassification layers: (gray)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
+
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"gray"}, []string{"red"}, 3)
+
+				report.WriteString("KNN_accuracy_(gray)_(red)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: (gray)\r\nClassification layers: (red)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
+
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingDetails.EmbeddingIterations[lastIteration], k,
+					[]string{"gray"}, []string{"red", "gray"}, 3)
+
+				report.WriteString("KNN_accuracy_(gray)_(red_and_gray)," + evaluationNeighbourhoodSize + ",LVSDE," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: (gray)\r\nClassification layers: (red_and_gray)\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: LVSDE\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
+
+				report.WriteString("#, #, #, #\r\n")
+
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingCompare1, k,
+					[]string{"NA"}, []string{"NA"}, 3)
+				report.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ",UMAP," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: NA\r\nClassification layers: NA\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: UMAP\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
+
+				report.WriteString("#, #, #, #\r\n")
+
+				evaluation = DataEmbedding.EvaluateEmbedding(
+					embeddingCompare2, k,
+					[]string{"NA"}, []string{"NA"}, 3)
+
+				report.WriteString("KNN_accuracy," + evaluationNeighbourhoodSize + ", t-SNE (Barnes Hut variant)," +
+					evaluation[0] + "\r\n")
+				confusionMatrices.WriteString("Evaluation layers: NA\r\nClassification layers: NA\r\nEvaluation neighbourhood size: " + evaluationNeighbourhoodSize + "\r\nEmbedding technique: t-SNE (Barnes Hut variant)\r\nConfusion matrix:\r\n" +
+					evaluation[1] + "______________________\r\n")
+
+				report.WriteString("#, #, #, #\r\n")
 			}
 
-			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "report.csv"), []byte(evaluationCSV.String()), 600)
+			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "report.csv"), []byte(report.String()), 600)
+			if err != nil {
+				panic("Not finished successfully.")
+			}
+
+			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "confusionMatrices.txt"), []byte(confusionMatrices.String()), 600)
 			if err != nil {
 				panic("Not finished successfully.")
 			}

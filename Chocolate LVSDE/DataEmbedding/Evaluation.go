@@ -19,14 +19,25 @@ import (
 	"github.com/emirpasic/gods/queues/priorityqueue"
 	"github.com/farshad-barahimi-academic-codes/chocolate-lvsde/DataAbstraction"
 	"math"
-	"sort"
+	"math/rand"
 	"strconv"
+	"strings"
 )
 
-func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAbstractionUnitVisibility, numberOfNeighbours int, evaluationLayers []string, evaluationNeighboursLayers []string, precision int) string {
-	numberOfDataAbstractionUnits := len(dataAbstractionUnitVisibilities)
+func EvaluateEmbedding(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbstraction.DataAbstractionUnitVisibility, numberOfNeighbours int, evaluationLayers []string, evaluationNeighboursLayers []string, precision int) []string {
+	numberOfDataAbstractionUnits := len(dataAbstractionUnitVisibilitiesToBeShuffled)
+	dataAbstractionUnitVisibilities := make([]*DataAbstraction.DataAbstractionUnitVisibility, numberOfDataAbstractionUnits)
+	copy(dataAbstractionUnitVisibilities, dataAbstractionUnitVisibilitiesToBeShuffled)
+
+	randomGenerator := rand.New(rand.NewSource(849662123548415231))
+	randomGenerator.Shuffle(len(dataAbstractionUnitVisibilities), func(i, j int) {
+		dataAbstractionUnitVisibilities[i], dataAbstractionUnitVisibilities[j] = dataAbstractionUnitVisibilities[j], dataAbstractionUnitVisibilities[i]
+	})
+
 	var corrects int = 0
 	var incorrects = 0
+	confusionMatrix := make(map[int]map[int]int)
+	var maximumClassLabelNumber = -1
 
 	inEvaluationLayers := make(map[string]bool)
 	for _, layer := range evaluationLayers {
@@ -83,7 +94,7 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAb
 				for t := 0; t < numberOfNeighbours; t++ {
 					a, _ := queue.Dequeue()
 					if a == nil {
-						return "(Not enough neighbours),(Not enough neighbours),(Not enough neighbours)"
+						return []string{"(Not enough neighbours),(Not enough neighbours),(Not enough neighbours)", "(Not enough neighbours)"}
 					}
 					neighbourIndex := a.([]int)[0]
 					if neighbourIndex != i {
@@ -92,32 +103,37 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAb
 				}
 			}
 
-			classLabelNumbers := make([]int, 0, len(counts))
 			for classLabelNumber := range counts {
-				classLabelNumbers = append(classLabelNumbers, classLabelNumber)
-			}
-			sort.Ints(classLabelNumbers)
-
-			var maximumCount int = -1
-			var maximumClassLabelNumber int = -1
-
-			for i := 0; i < len(classLabelNumbers); i++ {
-				classLabelNumber := classLabelNumbers[i]
-				if counts[classLabelNumber] > maximumCount {
-					maximumCount = counts[classLabelNumber]
+				if classLabelNumber > maximumClassLabelNumber {
 					maximumClassLabelNumber = classLabelNumber
 				}
 			}
 
-			if maximumClassLabelNumber == -1 {
+			var maximumCount int = -1
+			var maximumOccurrenceClassLabelNumber int = -1
+
+			for i := 0; i <= maximumClassLabelNumber; i++ {
+				if counts[i] > maximumCount {
+					maximumCount = counts[i]
+					maximumOccurrenceClassLabelNumber = i
+				}
+
+				if confusionMatrix[i] == nil {
+					confusionMatrix[i] = make(map[int]int)
+				}
+			}
+
+			if maximumOccurrenceClassLabelNumber == -1 {
 				panic("Not finished successfully.")
 			}
 
-			if maximumClassLabelNumber == int(dataAbstractionUnitVisibilities[i].ClassLabelNumber) {
+			if maximumOccurrenceClassLabelNumber == int(dataAbstractionUnitVisibilities[i].ClassLabelNumber) {
 				corrects++
 			} else {
 				incorrects++
 			}
+
+			confusionMatrix[int(dataAbstractionUnitVisibilities[i].ClassLabelNumber)][maximumOccurrenceClassLabelNumber]++
 		}
 	}
 
@@ -127,6 +143,20 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilities []*DataAbstraction.DataAb
 		percent = 100.0 * (float64(corrects) / float64(corrects+incorrects))
 	}
 
-	return strconv.FormatFloat(percent, 'f', precision, 64) + "%," +
-		strconv.Itoa(corrects) + "," + strconv.Itoa(incorrects)
+	confusionMatrixCSV := strings.Builder{}
+
+	for i := 0; i <= maximumClassLabelNumber; i++ {
+		for j := 0; j <= maximumClassLabelNumber; j++ {
+			if j != 0 {
+				confusionMatrixCSV.WriteString(",")
+			}
+
+			confusionMatrixCSV.WriteString(strconv.Itoa(confusionMatrix[i][j]))
+
+		}
+		confusionMatrixCSV.WriteString("\r\n")
+	}
+
+	return []string{strconv.FormatFloat(percent, 'f', precision, 64) + "%," +
+		strconv.Itoa(corrects) + "," + strconv.Itoa(incorrects), confusionMatrixCSV.String()}
 }
