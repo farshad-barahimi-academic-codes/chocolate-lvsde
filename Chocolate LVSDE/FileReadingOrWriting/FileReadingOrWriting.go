@@ -205,6 +205,16 @@ func WriteEmbeddingToFile(dataAbstractionUnitVisibilities []*DataAbstraction.Dat
 	multiplicationFactor := (float64(contextWidth) / (xHigh - xLow))
 	multiplicationFactor = math.Min(multiplicationFactor, (float64(contextHeight) / (yHigh - yLow)))
 
+	var marginX float64 = 20
+	var marginY float64 = 20
+	if colouring > 2 {
+		marginX = math.Round(float64(dataAbstractionSet.DataAbstractionUnits[0].ImageWidth)/2.0) + 5
+		marginY = math.Round(float64(dataAbstractionSet.DataAbstractionUnits[0].ImageHeight)/2.0) + 5
+	}
+
+	contextWidth += int(marginX * 2)
+	contextHeight += int(marginY * 2)
+
 	colours := make([][3]float64, len(coloursList))
 
 	for i = 0; i < int32(len(coloursList)); i++ {
@@ -279,8 +289,8 @@ func WriteEmbeddingToFile(dataAbstractionUnitVisibilities []*DataAbstraction.Dat
 				context.SetRGB(colour[0], colour[1], colour[2])
 				x := dataAbstractionUnitVisibility.VisualSpaceCoordinates[j][0]
 				y := dataAbstractionUnitVisibility.VisualSpaceCoordinates[j][1]
-				x = (x - xLow) * multiplicationFactor
-				y = (y - yLow) * multiplicationFactor
+				x = (x-xLow)*multiplicationFactor + marginX
+				y = (y-yLow)*multiplicationFactor + marginY
 
 				if colouring == 4 {
 					if redLayerOrNA {
@@ -927,16 +937,25 @@ function showDataOnCanvas(data,canvas) {
 	let sizes=[1000,2000,750,1500]
 	let contextWidth = sizes[sizeOption]
 	let contextHeight = sizes[sizeOption]
+	let radius1=15
+	let radius2=10
+	let radius3=5
+	radius1=Math.round(radius1*sizes[sizeOption]/sizes[1])
+	radius2=Math.round(radius2*sizes[sizeOption]/sizes[1])
+	radius3=Math.round(radius3*sizes[sizeOption]/sizes[1])
 
 	let multiplicationFactor = (contextWidth / (xHigh - xLow))
 	multiplicationFactor = Math.min(multiplicationFactor, (contextHeight) / (yHigh - yLow))
 
-	let insideMargin=15
-	if(images.length>0)
-		insideMargin=imagesWidth/2+5
+	let insideMarginX=radius1+5
+	let insideMarginY=radius1+5
+	if(images.length>0){
+		insideMarginX=Math.round(imagesWidth/2)+5
+		insideMarginY=Math.round(imagesHeight/2)+5
+	}
 
-	contextWidth+=insideMargin*2
-	contextHeight+=insideMargin*2
+	contextWidth+=insideMarginX*2
+	contextHeight+=insideMarginY*2
 
 	let popup=true
 
@@ -945,8 +964,8 @@ function showDataOnCanvas(data,canvas) {
 		canvas = document.querySelector("#canvas")
 	}
 	else {
-		contextWidth=xHigh-xLow+insideMargin*2
-		contextHeight=yHigh-yLow+insideMargin*2
+		contextWidth=xHigh-xLow+insideMarginX*2
+		contextHeight=yHigh-yLow+insideMarginY*2
 	}
 		
 	canvas.style.width=contextWidth.toString() +'px'
@@ -967,12 +986,12 @@ function showDataOnCanvas(data,canvas) {
 			let y=data[i][1]
 
 			if(popup){
-				x=data[i][10]-xLow + insideMargin
-				y=data[i][11]-yLow + insideMargin
+				x=data[i][10]-xLow + insideMarginX
+				y=data[i][11]-yLow + insideMarginY
 			}
 			else{
-				x = (x - xLow) * multiplicationFactor + insideMargin
-				y = (y - yLow) * multiplicationFactor + insideMargin
+				x = (x - xLow) * multiplicationFactor + insideMarginX
+				y = (y - yLow) * multiplicationFactor + insideMarginY
 				data[i][10]=x
 				data[i][11]=y
 			}
@@ -1021,7 +1040,7 @@ function showDataOnCanvas(data,canvas) {
 				}
 			}
 			else if(colouringOption==2){
-				let radius=10
+				let radius=radius1
 				if(round!=3){
 					context.beginPath();
 					context.arc(x, y, radius, 0, 2 * Math.PI);
@@ -1035,7 +1054,7 @@ function showDataOnCanvas(data,canvas) {
 						if(data[i][7]==1){
 							context.closePath();
 							context.beginPath();
-							context.arc(x, y, 5, 0, 2 * Math.PI);
+							context.arc(x, y, radius3, 0, 2 * Math.PI);
 							context.fillStyle = 'black';
 							context.fill();
 						}
@@ -1053,9 +1072,9 @@ function showDataOnCanvas(data,canvas) {
 				}
 			}
 			else if(colouringOption==0){
-				let radius=10
+				let radius=radius1
 				if(data[i][4]=='gray')
-					radius=6;
+					radius=radius2;
 				if(round!=3){
 					context.beginPath();
 					context.arc(x, y, radius, 0, 2 * Math.PI);
@@ -1079,9 +1098,9 @@ function showDataOnCanvas(data,canvas) {
 				}
 			}
 			else if(colouringOption==1){
-				let radius=10
+				let radius=radius1
 				if(data[i][4]=='gray')
-					radius=6;
+					radius=radius2;
 
 				if(round!=3){
 					context.beginPath();

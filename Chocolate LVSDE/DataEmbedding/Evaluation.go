@@ -50,6 +50,10 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbstra
 	}
 
 	for i := 0; i < numberOfDataAbstractionUnits; i++ {
+		if int(dataAbstractionUnitVisibilities[i].ClassLabelNumber) > maximumClassLabelNumber {
+			maximumClassLabelNumber = int(dataAbstractionUnitVisibilities[i].ClassLabelNumber)
+		}
+
 		if inEvaluationLayers[dataAbstractionUnitVisibilities[i].Layer] {
 			counts := make(map[int]int)
 
@@ -103,18 +107,12 @@ func EvaluateEmbedding(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbstra
 				}
 			}
 
-			for classLabelNumber := range counts {
-				if classLabelNumber > maximumClassLabelNumber {
-					maximumClassLabelNumber = classLabelNumber
-				}
-			}
-
-			var maximumCount int = -1
+			var maximumOccurrenceCount int = -1
 			var maximumOccurrenceClassLabelNumber int = -1
 
 			for i := 0; i <= maximumClassLabelNumber; i++ {
-				if counts[i] > maximumCount {
-					maximumCount = counts[i]
+				if counts[i] > maximumOccurrenceCount {
+					maximumOccurrenceCount = counts[i]
 					maximumOccurrenceClassLabelNumber = i
 				}
 
