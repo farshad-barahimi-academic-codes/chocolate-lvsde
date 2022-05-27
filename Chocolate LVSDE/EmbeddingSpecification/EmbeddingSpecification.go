@@ -482,7 +482,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.5"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.6"
 
 		lastIteration := 1829
 

@@ -37,6 +37,7 @@ type DataAbstractionUnit struct {
 	DataAbstractionUnitNumber                      int32
 	AreAllVisualSpaceProjectionsIneffective        bool
 	AreAllVisualSpaceProjectionsInRedLayer         bool
+	AreAllVisualSpaceProjectionsFrozen             bool
 	Mass                                           []float64
 	HasVertexSplitFailed                           bool
 	NeighbourIndices                               [][][2]int32
@@ -88,6 +89,7 @@ func (dataAbstractionUnit *DataAbstractionUnit) SetDefaultValues() {
 	dataAbstractionUnit.TemporaryVisualSpaceCoordinates[0][1] = 0
 
 	dataAbstractionUnit.AreAllVisualSpaceProjectionsIneffective = false
+	dataAbstractionUnit.AreAllVisualSpaceProjectionsFrozen = false
 
 	dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer = true
 

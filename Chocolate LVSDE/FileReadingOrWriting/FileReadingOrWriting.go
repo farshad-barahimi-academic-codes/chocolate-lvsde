@@ -531,29 +531,33 @@ func WriteLegendFileHtml(filePath string, classLabels []string, coloursList []st
 	html.WriteString(fmt.Sprintf("<style>.legend-entry-circle-small{min-width:%dpx;min-height:%dpx;max-width:%dpx;max-height:%dpx;display:inline-block;border-radius:%dpx;vertical-align:middle;}</style>\r\n", radiusSmall*2, radiusSmall*2, radiusSmall*2, radiusSmall*2, radiusSmall))
 	html.WriteString("<style>.legend-entry-big{min-height:32px;display:inline-block;line-height:32px;margin-left:5px;}</style>\r\n")
 	html.WriteString("<style>.legend-entry-small{min-height:32px;display:inline-block;line-height:16px;margin-left:5px;}</style>\r\n")
-	html.WriteString("<body>\r\n")
+	html.WriteString("<body style=\"font-size:18px;\">\r\n")
 
 	html.WriteString("<div style=\"border:2px solid black; padding:10px;margin:10px;\">\r\n")
 	html.WriteString("Colouring 0 red layer:\r\n")
 	for i := 0; i < len(classLabels); i++ {
-		html.WriteString("<div><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:" + coloursList[i] + ";\"></div>")
+		html.WriteString("<div style=\"margin-top:10px;margin-bottom:10px;\"><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:" + coloursList[i] + ";\"></div>")
 		html.WriteString("<div class=\"legend-entry-big\">" + classLabels[i] + "</div></div>\r\n")
 	}
 	html.WriteString("</div>\r\n")
 
 	html.WriteString("<div style=\"border:2px solid black; padding:10px;margin:10px;\">\r\n")
-	html.WriteString("Colouring 0 gray layer:\r\n")
+	html.WriteString("<div style=\"margin-bottom:10px;\">Colouring 0 gray layer:</div>\r\n")
 	for i := 0; i < len(classLabels); i++ {
-		html.WriteString("<div><div class=\"legend-entry-circle-small\" style=\"background-color:" + coloursList[i] + ";\"></div>")
+		html.WriteString("<div style=\"margin-top:4px;\"><div class=\"legend-entry-circle-small\" style=\"background-color:" + coloursList[i] + ";\"></div>")
 		html.WriteString("<div class=\"legend-entry-small\">" + classLabels[i] + "</div></div>\r\n")
 	}
 	html.WriteString("</div><div style=\"border:2px solid black; padding:10px;margin:10px;\">\r\n")
 	html.WriteString("Colouring 2 gray layer:\r\n")
 	for i := 0; i < len(classLabels); i++ {
-		html.WriteString("<div><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:" + coloursList[i] + ";\"></div>")
+		html.WriteString("<div style=\"margin-top:10px;margin-bottom:10px;\"><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:" + coloursList[i] + ";\"></div>")
 		html.WriteString("<div class=\"legend-entry-big\">" + classLabels[i] + "</div></div>\r\n")
 	}
-	html.WriteString("<div><div class=\"legend-entry-small\">⊙ Second projection</div></div>\r\n")
+
+	html.WriteString("<div style=\"margin-top:10px;margin-bottom:10px;\"><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:white;text-align:center;line-height:28px;font-size:12px;\">⚫</div>")
+	html.WriteString("<div class=\"legend-entry-big\">Second projection</div></div>\r\n")
+
+	//html.WriteString("<div><div class=\"legend-entry-small\">⊙ Second projection</div></div>\r\n")
 	html.WriteString("</div>\r\n")
 
 	html.WriteString("</body>\r\n")

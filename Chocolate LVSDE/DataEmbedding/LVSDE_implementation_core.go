@@ -111,10 +111,8 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) EmbedData(dataAb
 		for i = 0; i < numberOfDataAbstractionUnits; i++ {
 			dataAbstractionUnit := &dataAbstractionSet.DataAbstractionUnits[i]
 
-			if dataEmbeddingTechniqueLVSDE.CurrentPhase >= 3 {
-				if dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer {
-					continue
-				}
+			if dataAbstractionUnit.AreAllVisualSpaceProjectionsFrozen {
+				continue
 			}
 
 			for j = 0; j < int32(len(dataAbstractionUnit.TemporaryVisualSpaceCoordinates)); j++ {
@@ -422,7 +420,8 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) ChangePhaseIfReq
 	} else if dataEmbeddingTechniqueLVSDE.Iteration == 950 {
 		dataEmbeddingTechniqueLVSDE.CurrentPhase = 3
 		dataEmbeddingTechniqueLVSDE.TemperatureAdjustment = 440
-		dataEmbeddingTechniqueLVSDE.UnfreezeGrayLayer()
+		dataEmbeddingTechniqueLVSDE.UnfreezeAndMarkEffectiveGrayLayer()
+		dataEmbeddingTechniqueLVSDE.FreezeRedLayer()
 	} else if dataEmbeddingTechniqueLVSDE.Iteration == 1340 {
 		dataEmbeddingTechniqueLVSDE.CurrentPhase = 4
 		dataEmbeddingTechniqueLVSDE.TemperatureAdjustment = 830
@@ -528,7 +527,7 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) SplitVerticesOfG
 	}
 }
 
-func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) UnfreezeGrayLayer() {
+func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) UnfreezeAndMarkEffectiveGrayLayer() {
 	var numberOfDataAbstractionUnits int32 = int32(len(dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits))
 	var i int32
 
@@ -537,6 +536,20 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) UnfreezeGrayLaye
 
 		if !dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer {
 			dataAbstractionUnit.AreAllVisualSpaceProjectionsIneffective = false
+			dataAbstractionUnit.AreAllVisualSpaceProjectionsFrozen = false
+		}
+	}
+}
+
+func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) FreezeRedLayer() {
+	var numberOfDataAbstractionUnits int32 = int32(len(dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits))
+	var i int32
+
+	for i = 0; i < numberOfDataAbstractionUnits; i++ {
+		dataAbstractionUnit := &dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits[i]
+
+		if dataAbstractionUnit.AreAllVisualSpaceProjectionsInRedLayer {
+			dataAbstractionUnit.AreAllVisualSpaceProjectionsFrozen = true
 		}
 	}
 }
@@ -626,6 +639,7 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) MoveAndFreezeOne
 
 	dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits[indexMaximum].AreAllVisualSpaceProjectionsInRedLayer = false
 	dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits[indexMaximum].AreAllVisualSpaceProjectionsIneffective = true
+	dataEmbeddingTechniqueLVSDE.DataAbstractionSet.DataAbstractionUnits[indexMaximum].AreAllVisualSpaceProjectionsFrozen = true
 	dataEmbeddingTechniqueLVSDE.GrayLayerDataAbstractionUnitSize++
 }
 
