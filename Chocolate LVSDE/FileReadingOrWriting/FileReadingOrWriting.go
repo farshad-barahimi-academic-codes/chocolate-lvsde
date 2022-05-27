@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -171,8 +172,16 @@ func ReadDataAbstractionSetFromMultiDimensionalDataFile(filePath string, numberO
 	return dataAbstractionSet
 }
 
-func WriteEmbeddingToFile(dataAbstractionUnitVisibilities []*DataAbstraction.DataAbstractionUnitVisibility, filePath string, colouring int32, dataAbstractionSet *DataAbstraction.DataAbstractionSet, coloursList []string) {
-	var numberOfDataAbstractionUnits int32 = int32(len(dataAbstractionUnitVisibilities))
+func WriteEmbeddingToFile(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbstraction.DataAbstractionUnitVisibility, filePath string, colouring int32, dataAbstractionSet *DataAbstraction.DataAbstractionSet, coloursList []string) {
+	numberOfDataAbstractionUnits := int32(len(dataAbstractionUnitVisibilitiesToBeShuffled))
+	dataAbstractionUnitVisibilities := make([]*DataAbstraction.DataAbstractionUnitVisibility, numberOfDataAbstractionUnits)
+	copy(dataAbstractionUnitVisibilities, dataAbstractionUnitVisibilitiesToBeShuffled)
+
+	randomGenerator := rand.New(rand.NewSource(849662123548415231))
+	randomGenerator.Shuffle(len(dataAbstractionUnitVisibilities), func(i, j int) {
+		dataAbstractionUnitVisibilities[i], dataAbstractionUnitVisibilities[j] = dataAbstractionUnitVisibilities[j], dataAbstractionUnitVisibilities[i]
+	})
+
 	var i, j int32
 
 	var xLow float64 = math.Inf(1)

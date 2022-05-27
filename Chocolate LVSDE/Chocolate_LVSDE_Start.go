@@ -43,7 +43,7 @@ import (
 	To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
 */
 func main() {
-	fmt.Println("Chocolate LVSDE 1.6")
+	fmt.Println("Chocolate LVSDE 1.7")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")
