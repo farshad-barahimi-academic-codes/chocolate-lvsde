@@ -1,7 +1,5 @@
 /*
 	Named "Chocolate LVSDE", this project (including but not limited to this file) is an implementation of LVSDE dimensionality reduction technique written in Go programming language (majority of the code volume) and Python programming language, sometimes interoperating through C programming language interface of Go as the intermediate language interface, in addition to some codes written in Javascript, CSS and HTML.
-	LVSDE stands for Layered Vertex Splitting Data Embedding.
-	LVSDE dimensionality reduction technique (algorithm) was first named Red Gray Plus (subject to possibly some changes or corrections). Red Gray Plus is described in the arXiv preprint numbered 2101.06224 which should be updated soon (not yet) to use the name LVSDE instead.
 
 	The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
 
@@ -11,6 +9,10 @@
 	All codes in this project including but not limited to this file are written by Farshad Barahimi.
 
 	The purpose of writing this code is academic.
+
+	LVSDE stands for Layered Vertex Splitting Data Embedding.
+	For more information about LVSDE dimensionality reduction technique (algorithm) look at the following arXiv preprint:
+	Farshad Barahimi, "Multi-point dimensionality reduction to improve projection layout reliability",  arXiv:2101.06224v3, 2022.
 */
 
 package EmbeddingSpecification
@@ -482,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.7"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.8"
 
 		lastIteration := 1829
 

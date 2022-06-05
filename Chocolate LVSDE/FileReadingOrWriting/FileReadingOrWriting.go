@@ -11,6 +11,10 @@
 	All codes in this project including but not limited to this file are written by Farshad Barahimi.
 
 	The purpose of writing this code is academic.
+
+	LVSDE stands for Layered Vertex Splitting Data Embedding.
+	For more information about LVSDE dimensionality reduction technique (algorithm) look at the following arXiv preprint:
+	Farshad Barahimi, "Multi-point dimensionality reduction to improve projection layout reliability",  arXiv:2101.06224v3, 2022.
 */
 
 package FileReadingOrWriting
