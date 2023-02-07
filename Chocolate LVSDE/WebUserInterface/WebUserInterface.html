@@ -1232,11 +1232,18 @@
             const context = edgeBundlingCanvas.getContext('2d');
             context.clearRect(0, 0, edgeBundlingCanvas.width, edgeBundlingCanvas.height);
 
+            let metaBallsShown=true;
+
             for (let i = 0; i < bundledEdges.length; i++) {
                 if (bundledEdges[i].edgeClusterNumber === undefined)
                     context.strokeStyle = 'black';
-                else if (bundledEdges[i].edgeClusterNumber < 2)
-                    context.strokeStyle = ['red', 'yellow'][bundledEdges[i].edgeClusterNumber]
+                else if (bundledEdges[i].edgeClusterNumber < 2){
+                    if(metaBallsShown)
+                        context.strokeStyle = ['#660000', 'yellow'][bundledEdges[i].edgeClusterNumber]
+                    else
+                        context.strokeStyle = ['red', 'yellow'][bundledEdges[i].edgeClusterNumber]
+                }
+
                 else
                     context.strokeStyle = 'black';
 

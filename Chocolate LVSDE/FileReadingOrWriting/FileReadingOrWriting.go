@@ -571,7 +571,6 @@ func WriteLegendFileHtml(filePath string, classLabels []string, coloursList []st
 	html.WriteString("<div style=\"margin-top:10px;margin-bottom:10px;\"><div class=\"legend-entry-circle-big\" style=\"border:2px solid black;background-color:white;text-align:center;line-height:28px;font-size:12px;\">⚫</div>")
 	html.WriteString("<div class=\"legend-entry-big\">Second projection</div></div>\r\n")
 
-	//html.WriteString("<div><div class=\"legend-entry-small\">⊙ Second projection</div></div>\r\n")
 	html.WriteString("</div>\r\n")
 
 	html.WriteString("</body>\r\n")
