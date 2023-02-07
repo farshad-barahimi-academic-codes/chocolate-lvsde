@@ -1,0 +1,1286 @@
+<!-- Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license. -->
+<!-- The purpose of writing this code is academic. -->
+<html lang="en">
+    <head>
+        <title>Web user interface of Chocolate-LVSDE for viewing data embeddings</title>
+
+        <script src="https://unpkg.com/bson@4.6.3/dist/bson.bundle.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="https://unpkg.com/heapify@0.6.0/heapify.js"></script>
+        <script src="https://unpkg.com/jszip@3.9.1/dist/jszip.min.js"></script>
+        <script src="https://unpkg.com/@flatten-js/core@1.3.4/dist/main.umd.js"></script>
+
+        <script type="module">
+        /*
+            Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+            The purpose of writing this code is academic.
+        */
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelector("#show-button").addEventListener('click', function () {
+                if (document.querySelector("#file-input").value === '') {
+                    return;
+                }
+
+                const log = document.querySelector("#log")
+                log.innerHTML = 'Please wait...'
+
+                let file = document.querySelector("#file-input").files[0];
+
+                let fileReader = new FileReader();
+                fileReader.onload = function (e) {
+                    readData(e.target.result)
+                };
+                fileReader.onerror = function (e) {
+                    throw new Error("Error")
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+
+            document.querySelector("#canvas").addEventListener('mousedown', e => {
+                if (e.which === 1 && !disableClick) {
+                    let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+                    let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
+                    const blue = document.querySelector("#blue")
+                    blue.style.left = x.toString() + 'px'
+                    blue.style.top = y.toString() + 'px'
+                    blue.style.width = '0px'
+                    blue.style.height = '0px'
+                    if (blue.style.display !== 'block')
+                        blue.style.display = 'block'
+                }
+            });
+
+            document.querySelector("#canvas").addEventListener('mousemove', e => {
+                if (e.which === 1 && !disableClick) {
+                    let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+                    let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
+                    const blue = document.querySelector("#blue")
+                    let width = Math.max(0, x - blue.getBoundingClientRect().left - window.scrollX)
+                    let height = Math.max(0, y - blue.getBoundingClientRect().top - window.scrollY)
+                    blue.style.width = width.toString() + 'px'
+                    blue.style.height = height.toString() + 'px'
+                }
+            });
+
+            document.querySelector("#canvas").addEventListener('mouseup', e => {
+                if (e.which === 1 && !disableClick) {
+                    let x = e.offsetX + document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+                    let y = e.offsetY + document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
+                    const blue = document.querySelector("#blue")
+                    let width = Math.max(0, x - blue.getBoundingClientRect().left - window.scrollX)
+                    let height = Math.max(0, y - blue.getBoundingClientRect().top - window.scrollY)
+                    blue.style.width = width.toString() + 'px'
+                    blue.style.height = height.toString() + 'px'
+                    x = blue.getBoundingClientRect().left - document.querySelector("#canvas").getBoundingClientRect().left
+                    y = blue.getBoundingClientRect().top - document.querySelector("#canvas").getBoundingClientRect().top
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    updateBasedOnSelection(x, y, width, height)
+                    document.querySelector("#log").innerHTML = '(x:' + x.toString() + ', y:' + y.toString() + ', w:' + width.toString() + ', h:' + height.toString() + ')'
+                }
+            });
+        });
+
+        let iterationsData = []
+        let coloursList = []
+        let currentIteration = 1829
+        let imagesWidth = 0
+        let imagesHeight = 0
+        let images = []
+        let imagesRed = []
+        let imagesGray = []
+        let numberOfDataAbstractionUnits = 0
+        let colouringOption = 0
+        let sizeOption = 0
+        let overlapReductionRounds = 20
+        let overlapReductionRoundsOption = 0
+        let yellowOption = true
+        let disableClick = true
+
+        function readData(bsonFileContentZipped) {
+            let new_zip = new JSZip();
+            new_zip.loadAsync(new Uint8Array(bsonFileContentZipped)).then(function (zip) {
+                zip.file("embedding_details.bson").async("uint8array", function updateCallback(metadata) {
+                    document.querySelector("#log").innerHTML = 'Please wait... ' + (metadata.percent / 2).toFixed(1) + '%';
+                }).then(function (bsonFileContent) {
+                    const embeddingDetails = BSON.deserialize(bsonFileContent);
+
+                    iterationsData = []
+                    coloursList = embeddingDetails['colours_list']
+                    let imagesGrayscale = embeddingDetails['images_grayscale_single_channel']
+                    let imagesRedGreenBlueChannels = embeddingDetails['images_red_green_blue_channels']
+                    imagesWidth = embeddingDetails['image_width']
+
+                    numberOfDataAbstractionUnits = embeddingDetails['embedding_iterations'][0].length
+                    for (let iteration = 0; iteration < 1830; iteration++) {
+                        iterationsData.push([])
+                        let iterationData = embeddingDetails['embedding_iterations'][iteration]
+                        for (let i = 0; i < iterationData.length; i++) {
+                            for (let j = 0; j < iterationData[i].v.length; j++) {
+                                iterationsData[iteration].push([iterationData[i].v[j][0], iterationData[i].v[j][1], 20, 20, iterationData[i].l, iterationData[i].c, iterationData[i].d, j, false, false, 0, 0])
+                            }
+                        }
+                    }
+
+                    if (imagesGrayscale.length > 0) {
+                        for (let i = 0; i < numberOfDataAbstractionUnits; i++) {
+                            let flat = imagesGrayscale[i].value()
+                            if (i === 0)
+                                imagesHeight = flat.length / imagesWidth
+                            let rgba = []
+                            let rgbaRed = []
+                            let rgbaGray = []
+                            for (let j = 0; j < imagesHeight; j++) {
+                                for (let k = 0; k < imagesWidth; k++) {
+                                    let grayscale = flat[j * imagesWidth + k].charCodeAt(0)
+                                    rgba.push(grayscale)
+                                    rgba.push(grayscale)
+                                    rgba.push(grayscale)
+                                    rgba.push(255)
+                                    rgbaRed.push(grayscale)
+                                    rgbaRed.push(0)
+                                    rgbaRed.push(0)
+                                    rgbaRed.push(255)
+                                    rgbaGray.push(Math.floor(127 + grayscale * 128 / 255))
+                                    rgbaGray.push(Math.floor(127 + grayscale * 128 / 255))
+                                    rgbaGray.push(Math.floor(127 + grayscale * 128 / 255))
+                                    rgbaGray.push(255)
+                                }
+                            }
+
+                            images.push(new ImageData(Uint8ClampedArray.from(rgba), imagesWidth, imagesHeight))
+                            imagesRed.push(new ImageData(Uint8ClampedArray.from(rgbaRed), imagesWidth, imagesHeight))
+                            imagesGray.push(new ImageData(Uint8ClampedArray.from(rgbaGray), imagesWidth, imagesHeight))
+                        }
+                        colouringOption = 4
+                    } else if (imagesRedGreenBlueChannels.length > 0) {
+                        for (let i = 0; i < numberOfDataAbstractionUnits; i++) {
+                            let flat = imagesRedGreenBlueChannels[i].value()
+                            if (i === 0)
+                                imagesHeight = (flat.length / imagesWidth) / 3
+                            let rgba = []
+                            let rgbaRed = []
+                            let rgbaGray = []
+                            for (let j = 0; j < imagesHeight; j++) {
+                                for (let k = 0; k < imagesWidth; k++) {
+                                    let red = flat[j * imagesWidth + k].charCodeAt(0)
+                                    let green = flat[imagesWidth * imagesHeight + j * imagesWidth + k].charCodeAt(0)
+                                    let blue = flat[2 * imagesWidth * imagesHeight + j * imagesWidth + k].charCodeAt(0)
+                                    rgba.push(red)
+                                    rgba.push(green)
+                                    rgba.push(blue)
+                                    rgba.push(255)
+                                    rgbaRed.push(red)
+                                    rgbaRed.push(green)
+                                    rgbaRed.push(blue)
+                                    rgbaRed.push(255)
+                                    rgbaGray.push(red)
+                                    rgbaGray.push(green)
+                                    rgbaGray.push(blue)
+                                    rgbaGray.push(255)
+                                }
+                            }
+
+                            images.push(new ImageData(Uint8ClampedArray.from(rgba), imagesWidth, imagesHeight))
+                            imagesRed.push(new ImageData(Uint8ClampedArray.from(rgbaRed), imagesWidth, imagesHeight))
+                            imagesGray.push(new ImageData(Uint8ClampedArray.from(rgbaGray), imagesWidth, imagesHeight))
+                        }
+                        colouringOption = 4
+                    }
+
+                    showData()
+                });
+            });
+        }
+
+        function updateBasedOnSelection(x, y, width, height) {
+            let data = iterationsData[currentIteration]
+            for (let i = 0; i < data.length; i++) {
+                data[i][9] = false
+            }
+
+            for (let i = 0; i < data.length; i++) {
+                if (data[i][10] >= x && data[i][10] <= x + width && data[i][11] >= y && data[i][11] <= y + height) {
+                    data[i][8] = true
+                    for (let j = 0; j < data.length; j++) {
+                        if (i !== j && data[i][6] === data[j][6]) {
+                            data[j][9] = true
+                        }
+                    }
+                } else {
+                    data[i][8] = false
+                }
+            }
+
+            showIteration(currentIteration)
+        }
+
+        function showData() {
+            showIteration(1829)
+
+            const blue = document.querySelector("#blue")
+            blue.style.display = 'none'
+            blue.style.backgroundColor = 'rgba(255,255,255,0)'
+            blue.style.border = '2px solid blue'
+            blue.style.top = '0px'
+            blue.style.left = '0px'
+            blue.style.width = '0px'
+            blue.style.height = '0px'
+
+            logCurrentIteration()
+
+            document.querySelector("#show-button").style.display = 'none'
+            document.querySelector("#file-input").style.display = 'none'
+            document.querySelector("#prev-button").style.display = 'inline-block'
+            document.querySelector("#next-button").style.display = 'inline-block'
+            document.querySelector("#last-button").style.display = 'inline-block'
+            document.querySelector("#first-button").style.display = 'inline-block'
+            document.querySelector("#prev-100-button").style.display = 'inline-block'
+            document.querySelector("#next-100-button").style.display = 'inline-block'
+            document.querySelector("#change-colouring-button").style.display = 'inline-block'
+            document.querySelector("#reduce-overlap-button").style.display = 'inline-block'
+            document.querySelector("#change-sizing-button").style.display = 'inline-block'
+            document.querySelector("#change-overlap-reduction-rounds-button").style.display = 'inline-block'
+            document.querySelector("#change-yellow-option").style.display = 'inline-block'
+            document.querySelector("#show-edge-bundling").style.display = 'inline-block'
+            document.querySelector("#show-edge-bundling-clustering").style.display = 'inline-block'
+            document.querySelector("#show-meta-balls").style.display = 'inline-block'
+            disableClick = false;
+
+            document.querySelector("#prev-button").addEventListener('click', function () {
+                if (currentIteration > 0) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(currentIteration - 1);
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#next-button").addEventListener('click', function () {
+                if (currentIteration < 1829) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(currentIteration + 1);
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#last-button").addEventListener('click', function () {
+                if (currentIteration < 1829) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(1829);
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#first-button").addEventListener('click', function () {
+                if (currentIteration > 0) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(0);
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#prev-100-button").addEventListener('click', function () {
+                if (currentIteration > 0) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(Math.max(currentIteration - 100, 0));
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#next-100-button").addEventListener('click', function () {
+                if (currentIteration < 1829) {
+                    document.querySelector("#log").innerHTML = 'Please wait...'
+                    showIteration(Math.min(currentIteration + 100, 1829));
+                    logCurrentIteration()
+                }
+            });
+
+            document.querySelector("#change-colouring-button").addEventListener('click', function () {
+                if (images.length > 0)
+                    colouringOption = (colouringOption + 1) % 5
+                else
+                    colouringOption = (colouringOption + 1) % 3
+
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                showIteration(currentIteration);
+                logCurrentIteration()
+            });
+
+            document.querySelector("#reduce-overlap-button").addEventListener('click', function () {
+                hideButtons();
+                reduceOverlap(overlapReductionRounds);
+            });
+
+            document.querySelector("#change-sizing-button").addEventListener('click', function () {
+                sizeOption = (sizeOption + 1) % 4
+
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                showIteration(currentIteration);
+                logCurrentIteration()
+            });
+
+            document.querySelector("#change-overlap-reduction-rounds-button").addEventListener('click', function () {
+                overlapReductionRoundsOption = (overlapReductionRoundsOption + 1) % 4
+                overlapReductionRounds = [20, 40, 60, 80][overlapReductionRoundsOption]
+
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                showIteration(currentIteration);
+                logCurrentIteration()
+            });
+
+            document.querySelector("#change-yellow-option").addEventListener('click', function () {
+                yellowOption = !yellowOption
+
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                showIteration(currentIteration);
+                logCurrentIteration()
+            });
+
+            document.querySelector("#show-edge-bundling").addEventListener('click', function () {
+                hideButtons()
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                forceDirectedEdgeBundling().then(function (bundledEdges) {
+                    showIteration(currentIteration);
+                    showBundledEdges(bundledEdges);
+                    logCurrentIteration();
+                });
+            });
+
+            document.querySelector("#show-edge-bundling-clustering").addEventListener('click', function () {
+                hideButtons()
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                forceDirectedEdgeBundling().then(function (bundledEdges) {
+                    clusterEdges(bundledEdges).then(function (edgeClusters) {
+                        showIteration(currentIteration);
+                        showBundledEdges(bundledEdges);
+                        logCurrentIteration();
+                    });
+                });
+            });
+
+            document.querySelector("#show-meta-balls").addEventListener('click', function () {
+                hideButtons()
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                forceDirectedEdgeBundling().then(function (bundledEdges) {
+                    clusterEdges(bundledEdges).then(function (edgeClusters) {
+                        showEdgeClusterMetaBalls(edgeClusters).then(function () {
+                            showIteration(currentIteration);
+                            showBundledEdges(bundledEdges);
+                            logCurrentIteration();
+                        });
+                    });
+                });
+            });
+
+        }
+
+        function hideButtons() {
+            document.querySelector("#prev-button").style.display = 'none'
+            document.querySelector("#next-button").style.display = 'none'
+            document.querySelector("#last-button").style.display = 'none'
+            document.querySelector("#first-button").style.display = 'none'
+            document.querySelector("#prev-100-button").style.display = 'none'
+            document.querySelector("#next-100-button").style.display = 'none'
+            document.querySelector("#change-colouring-button").style.display = 'none'
+            document.querySelector("#reduce-overlap-button").style.display = 'none'
+            document.querySelector("#change-sizing-button").style.display = 'none'
+            document.querySelector("#change-overlap-reduction-rounds-button").style.display = 'none'
+            document.querySelector("#change-yellow-option").style.display = 'none'
+            document.querySelector("#show-edge-bundling").style.display = 'none'
+            document.querySelector("#show-edge-bundling-clustering").style.display = 'none'
+            document.querySelector("#show-meta-balls").style.display = 'none'
+            disableClick = true
+        }
+
+        function logCurrentIteration() {
+            if (currentIteration === 1829) {
+                document.querySelector("#log").innerHTML = 'Iteration: last iteration'
+            } else {
+                document.querySelector("#log").innerHTML = 'Iteration: ' + (currentIteration + 1).toString()
+            }
+        }
+
+        function showIteration(iteration) {
+            currentIteration = iteration
+            showDataOnCanvas(iterationsData[iteration], null)
+        }
+
+        function showDataOnCanvas(data, canvas) {
+            let xLow = Number.POSITIVE_INFINITY
+            let xHigh = Number.NEGATIVE_INFINITY
+
+            let yLow = Number.POSITIVE_INFINITY
+            let yHigh = Number.NEGATIVE_INFINITY
+
+            for (let i = 0; i < data.length; i++) {
+                let x = data[i][0]
+                let y = data[i][1]
+
+                if (canvas !== null) {
+                    x = data[i][10]
+                    y = data[i][11]
+                }
+
+                xLow = Math.min(xLow, x)
+                xHigh = Math.max(xHigh, x)
+                yLow = Math.min(yLow, y)
+                yHigh = Math.max(yHigh, y)
+
+            }
+
+            let sizes = [1000, 2000, 750, 1500]
+            let contextWidth = sizes[sizeOption]
+            let contextHeight = sizes[sizeOption]
+            let radius1 = 15
+            let radius2 = 10
+            let radius3 = 5
+            radius1 = Math.round(radius1 * sizes[sizeOption] / sizes[1])
+            radius2 = Math.round(radius2 * sizes[sizeOption] / sizes[1])
+            radius3 = Math.round(radius3 * sizes[sizeOption] / sizes[1])
+
+            let multiplicationFactor = (contextWidth / (xHigh - xLow))
+            multiplicationFactor = Math.min(multiplicationFactor, (contextHeight) / (yHigh - yLow))
+
+            let insideMarginX = radius1 + 5
+            let insideMarginY = radius1 + 5
+            if (images.length > 0) {
+                insideMarginX = Math.round(imagesWidth / 2) + 5
+                insideMarginY = Math.round(imagesHeight / 2) + 5
+            }
+
+            contextWidth += insideMarginX * 2
+            contextHeight += insideMarginY * 2
+
+            let popup = true
+
+            if (canvas === null) {
+                popup = false
+                canvas = document.querySelector("#canvas")
+            } else {
+                contextWidth = xHigh - xLow + insideMarginX * 2
+                contextHeight = yHigh - yLow + insideMarginY * 2
+            }
+
+            canvas.style.width = contextWidth.toString() + 'px'
+            canvas.style.height = contextHeight.toString() + 'px'
+            canvas.style.border = '1px solid black'
+            canvas.style.display = 'block'
+            canvas.style.margin = '20px'
+            canvas.width = contextWidth
+            canvas.height = contextHeight
+
+
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let round = 1; round <= 3; round++) {
+                for (let i = 0; i < data.length; i++) {
+                    let x = data[i][0]
+                    let y = data[i][1]
+
+                    if (popup) {
+                        x = data[i][10] - xLow + insideMarginX
+                        y = data[i][11] - yLow + insideMarginY
+                    } else {
+                        x = (x - xLow) * multiplicationFactor + insideMarginX
+                        y = (y - yLow) * multiplicationFactor + insideMarginY
+                        data[i][10] = x
+                        data[i][11] = y
+                    }
+
+                    let ind = data[i][6]
+
+                    if (colouringOption === 2 && data[i][4] === 'gray' && round === 1)
+                        continue;
+
+                    if (colouringOption === 2 && data[i][4] === 'red' && round === 2)
+                        continue;
+
+                    if ((colouringOption === 0 || colouringOption === 1 || colouringOption === 4) && data[i][4] === 'gray' && round === 2)
+                        continue;
+
+                    if ((colouringOption === 0 || colouringOption === 1 || colouringOption === 4) && data[i][4] === 'red' && round === 1)
+                        continue;
+
+                    if (colouringOption === 3 && round === 2)
+                        continue;
+
+                    if (colouringOption === 4) {
+                        if (round !== 3) {
+                            if (data[i][4] === 'gray')
+                                context.putImageData(imagesGray[ind], x - imagesWidth / 2, y - imagesHeight / 2)
+                            else
+                                context.putImageData(imagesRed[ind], x - imagesWidth / 2, y - imagesHeight / 2)
+                        }
+
+                        if (data[i][9] && round === 3 && yellowOption) {
+                            context.strokeStyle = 'yellow';
+                            context.rect(x - imagesWidth / 2 - 1, y - imagesHeight / 2 - 1, imagesWidth + 2, imagesHeight + 2)
+                            context.lineWidth = 2;
+                            context.stroke();
+                        }
+                    } else if (colouringOption === 3) {
+                        if (round !== 3)
+                            context.putImageData(images[ind], x - imagesWidth / 2, y - imagesHeight / 2)
+
+                        if (data[i][9] && round === 3 && yellowOption) {
+                            context.strokeStyle = 'yellow';
+                            context.rect(x - imagesWidth / 2 - 1, y - imagesHeight / 2 - 1, imagesWidth + 2, imagesHeight + 2)
+                            context.lineWidth = 2;
+                            context.stroke();
+                        }
+                    } else if (colouringOption === 2) {
+                        let radius = radius1
+                        if (round !== 3) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fillStyle = coloursList[data[i][5]];
+                            context.fill();
+                            context.lineWidth = 2;
+
+                            if (data[i][4] === 'gray') {
+                                context.strokeStyle = 'black';
+                                context.stroke();
+                                if (data[i][7] === 1) {
+                                    context.closePath();
+                                    context.beginPath();
+                                    context.arc(x, y, radius3, 0, 2 * Math.PI);
+                                    context.fillStyle = 'black';
+                                    context.fill();
+                                }
+                            }
+
+                            context.closePath();
+                        } else if (data[i][9] && yellowOption) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fillStyle = 'none'
+                            context.lineWidth = 2;
+                            context.strokeStyle = 'yellow';
+                            context.stroke();
+                        }
+                    } else if (colouringOption === 0) {
+                        let radius = radius1
+                        if (data[i][4] === 'gray')
+                            radius = radius2;
+                        if (round !== 3) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fillStyle = coloursList[data[i][5]];
+                            context.fill();
+                            context.lineWidth = 2;
+                            if (data[i][4] === 'red') {
+                                context.strokeStyle = 'black';
+                                context.stroke();
+                            }
+
+                            context.closePath();
+                        } else if (data[i][9] && yellowOption) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fillStyle = 'none'
+                            context.lineWidth = 2;
+                            context.strokeStyle = 'yellow';
+                            context.stroke();
+                        }
+                    } else if (colouringOption === 1) {
+                        let radius = radius1
+                        if (data[i][4] === 'gray')
+                            radius = radius2;
+
+                        if (round !== 3) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            if (data[i][4] === 'gray')
+                                context.fillStyle = 'gray';
+                            else
+                                context.fillStyle = 'red';
+                            context.fill();
+                            context.lineWidth = 2;
+
+                            context.closePath();
+                        } else if (data[i][9] && yellowOption) {
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fillStyle = 'none'
+                            context.lineWidth = 2;
+                            context.strokeStyle = 'yellow';
+                            context.stroke();
+                        }
+                    }
+                }
+            }
+        }
+
+        function flatten(toBeFlattened, tree, isRoot) {
+            let treeIndex1 = toBeFlattened[0]
+            let flattened = [treeIndex1]
+
+            for (let i = 1; i < toBeFlattened.length; i++) {
+                let subFlattened;
+                if (!Array.isArray(toBeFlattened[i]))
+                    subFlattened = [toBeFlattened[i]];
+                else
+                    subFlattened = flatten(toBeFlattened[i], tree, isRoot);
+
+                let treeIndex2 = subFlattened[0]
+                tree[treeIndex1].push(treeIndex2)
+                isRoot[treeIndex2] = false
+                for (let j = 0; j < subFlattened.length; j++)
+                    flattened.push(subFlattened[j])
+            }
+
+            return flattened
+        }
+
+        function move(dataCopy, i, j) {
+            let x1 = dataCopy[i][10]
+            let y1 = dataCopy[i][11]
+            let width1 = dataCopy[i][2]
+            let height1 = dataCopy[i][3]
+            let left1 = x1 - width1 / 2
+            let top1 = y1 - height1 / 2
+
+            let x2 = dataCopy[j][10]
+            let y2 = dataCopy[j][11]
+            let width2 = dataCopy[j][2]
+            let height2 = dataCopy[j][3]
+            let left2 = x2 - width2 / 2
+            let top2 = y2 - height2 / 2
+
+            let horizontalDifference;
+            let verticalDifference;
+            if (left1 <= left2)
+                horizontalDifference = left2 - (left1 + width1);
+            else
+                horizontalDifference = left1 - (left2 + width2);
+
+            if (top1 <= top2)
+                verticalDifference = top2 - (top1 + height1);
+            else
+                verticalDifference = top1 - (top2 + height2);
+
+            let t, x, y;
+
+            if (horizontalDifference >= 0 && verticalDifference >= 0) {
+                t = Math.sqrt(Math.pow(horizontalDifference, 2) + Math.pow(verticalDifference, 2)) / Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2));
+                x = x1 + (x2 - x1) * t
+                y = y1 + (y2 - y1) * t
+            } else if (horizontalDifference >= 0 && verticalDifference < 0) {
+                t = horizontalDifference / (Math.abs(x2 - x1) * 2.0);
+                x = x1 + (x2 - x1) * t
+                y = y1 + (y2 - y1) * t
+            } else if (horizontalDifference < 0 && verticalDifference >= 0) {
+                t = verticalDifference / (Math.abs(y2 - y1) * 2.0);
+                x = x1 + (x2 - x1) * t
+                y = y1 + (y2 - y1) * t
+            } else {
+                if (Math.abs(x2 - x1) > 1e-10 && Math.abs(y2 - y1) > 1e-10) {
+                    t = Math.sqrt(Math.pow((width1 + width2) / 2.0, 2) + Math.pow((height1 + height2) / 2.0, 2)) / Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2));
+                    x = x1 + (x2 - x1) * t
+                    y = y1 + (y2 - y1) * t
+                } else if (Math.abs(x2 - x1) > 1e-10) {
+                    t = (width1 + width2) / (Math.abs(x2 - x1) * 2.0);
+                    x = x1 + (x2 - x1) * t
+                    y = y1 + (y2 - y1) * t
+                } else if (Math.abs(y2 - y1) > 1e-10) {
+                    t = (height1 + height2) / (Math.abs(y2 - y1) * 2.0);
+                    x = x1 + (x2 - x1) * t
+                    y = y1 + (y2 - y1) * t
+                } else {
+                    if (width1 + width2 < height1 + height2) {
+                        x = x1 + (width1 + width2) / 2.0
+                        y = y1
+                    } else {
+                        x = x1
+                        y = y1 + (height1 + height2) / 2.0
+                    }
+                }
+            }
+
+            dataCopy[j][10] = x
+            dataCopy[j][11] = y
+        }
+
+        function moveTree(tree, root, dataCopy) {
+            for (let i = 0; i < tree[root].length; i++) {
+                move(dataCopy, root, tree[root][i])
+                moveTree(tree, tree[root][i], dataCopy)
+            }
+        }
+
+        function overlapWeight(x1, y1, left1, top1, width1, height1, x2, y2, left2, top2, width2, height2) {
+            let horizontalDifference;
+            let verticalDifference;
+            if (left1 <= left2)
+                horizontalDifference = left2 - (left1 + width1);
+            else
+                horizontalDifference = left1 - (left2 + width2);
+
+            if (top1 <= top2)
+                verticalDifference = top2 - (top1 + height1);
+            else
+                verticalDifference = top1 - (top2 + height2);
+
+            if (horizontalDifference >= 0 && verticalDifference >= 0)
+                return Math.sqrt(Math.pow(horizontalDifference, 2) + Math.pow(verticalDifference, 2));
+            else if (horizontalDifference >= 0 && verticalDifference < 0)
+                return horizontalDifference;
+            else if (horizontalDifference < 0 && verticalDifference >= 0)
+                return verticalDifference;
+            else {
+                let t;
+                if (Math.abs(x2 - x1) > 1e-10 && Math.abs(y2 - y1) > 1e-10)
+                    t = Math.sqrt(Math.pow((width1 + width2) / 2.0, 2) + Math.pow((height1 + height2) / 2.0, 2)) / Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2));
+                else if (Math.abs(x2 - x1) > 1e-10)
+                    t = (width1 + width2) / (Math.abs(x2 - x1) * 2.0);
+                else if (Math.abs(y2 - y1) > 1e-10)
+                    t = (height1 + height2) / (Math.abs(y2 - y1) * 2.0);
+                else
+                    return -Math.sqrt(Math.pow((width1 + width2) / 2.0, 2) + Math.pow((height1 + height2) / 2.0, 2));
+
+                return Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2)) - t * Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2));
+            }
+        }
+
+        function reduceOverlap(rounds) {
+            // The algorithm used for overlap reduction is a modification of the algorithm in the following paper:
+            // Nachmanson, Lev, Arlind Nocaj, Sergey Bereg, Leishi Zhang, and Alexander Holroyd. "Node overlap removal by growing a tree." In International Symposium on Graph Drawing and Network Visualization, pp. 33-43. Springer, Cham, 2016.
+            let data = iterationsData[currentIteration]
+            let dataCopy = []
+            for (let i = 0; i < data.length; i++) {
+                if (data[i][8]) {
+                    let tempData = data[i].slice()
+                    if (images.length > 0 && colouringOption > 2) {
+                        tempData[2] = imagesWidth
+                        tempData[3] = imagesHeight
+                    }
+                    dataCopy.push(data[i].slice())
+                }
+            }
+
+            for (let i = 0; i < rounds; i++)
+                reduceOverlapMove(dataCopy)
+
+            let popup = document.querySelector("#overlap-reduced")
+
+            popup.style.background = 'white'
+            popup.style.border = '2px solid black'
+            popup.style.left = '100px'
+            popup.style.top = '100px'
+            popup.style.width = '500px'
+            popup.style.height = '500px'
+            popup.style.pointerEvents = 'auto'
+            popup.style.overflow = 'scroll'
+            popup.style.display = 'block'
+
+            let bar = document.createElement('div')
+            bar.innerHTML = 'Overlap reduced'
+            bar.style.background = '#BBBBBB'
+            bar.style.textAlign = 'center'
+            bar.style.cursor = 'default'
+            bar.style.padding = '3px'
+
+            let canvasPopup = document.createElement('canvas')
+            canvasPopup.style.border = '1px solid black'
+            popup.replaceChildren(bar, canvasPopup)
+            showDataOnCanvas(dataCopy, canvasPopup)
+        }
+
+        function reduceOverlapMove(dataCopy) {
+            // The algorithm used for overlap reduction is a modification of the algorithm in the following paper:
+            // Nachmanson, Lev, Arlind Nocaj, Sergey Bereg, Leishi Zhang, and Alexander Holroyd. "Node overlap removal by growing a tree." In International Symposium on Graph Drawing and Network Visualization, pp. 33-43. Springer, Cham, 2016.
+
+            let dataCopy1 = []
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                let x = dataCopy[i][10];
+                let y = dataCopy[i][11];
+                dataCopy1.push([x, y])
+            }
+
+            const delaunay = d3.Delaunay.from(dataCopy1);
+
+            let weights = []
+            const {MinQueue} = Heapify;
+            const weightsQueue = new MinQueue(dataCopy.length * 8 + 10, [], [], Uint32Array, Float64Array);
+
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                let x1 = dataCopy[i][10]
+                let y1 = dataCopy[i][11]
+                let width1 = dataCopy[i][2]
+                let height1 = dataCopy[i][3]
+
+                let neighbourIndices = delaunay.neighbors(i)
+                for (let neighbourIndex of neighbourIndices) {
+                    let x2 = dataCopy[neighbourIndex][10]
+                    let y2 = dataCopy[neighbourIndex][11]
+                    let width2 = dataCopy[neighbourIndex][2]
+                    let height2 = dataCopy[neighbourIndex][3]
+                    let weight = overlapWeight(x1, y1, x1 - width1 / 2, y1 - height1 / 2, width1, height1, x2, y2, x2 - width2 / 2, y2 - height2 / 2, width2, height2)
+                    weightsQueue.push(weights.length, weight)
+                    weights.push([i, neighbourIndex, weight])
+                }
+            }
+
+            let unionFind = []
+            let tree = []
+            let isSubFlattened = []
+            let isMerged = []
+            let isRoot = []
+            for (let i = 0; i < dataCopy.length; i++) {
+                unionFind.push([i])
+                tree.push([])
+                isSubFlattened.push(false)
+                isMerged.push(false)
+                isRoot.push(true)
+            }
+
+            while (true) {
+                let index = weightsQueue.pop()
+                if (index === undefined) {
+                    break;
+                }
+
+                let min = Math.min(weights[index][0], weights[index][1])
+                let max = Math.max(weights[index][0], weights[index][1])
+                if (min === max)
+                    throw new Error("Error")
+
+                if (isMerged[max])
+                    continue;
+
+                unionFind[min].push(unionFind[max])
+                isMerged[max] = true
+            }
+
+            for (let i = 0; i < unionFind.length; i++)
+                if (isMerged[i])
+                    unionFind[i] = []
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                if (unionFind[i].length !== 0 && isRoot[i] !== false) {
+                    unionFind[i] = flatten(unionFind[i], tree, isRoot);
+                }
+            }
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                if (isRoot[i]) {
+                    moveTree(tree, i, dataCopy)
+                }
+            }
+        }
+
+        function computeEdgeCompatibility(edge1, edge2) {
+            // Implementation of computation of edge compatibility described in the following paper:
+            // Danny Holten and Jarke J. van Wijk, "Force-Directed Edge Bundling for Graph Visualization", Computer Graphics Forum, volume 28, number 3, pages 983-990, 2009.
+            // A typo in the above paper is assumed and fixed in this implementation.
+            let v1 = {x: edge1.x2 - edge1.x1, y: edge1.y2 - edge1.y1, length: undefined}
+            let v2 = {x: edge2.x2 - edge2.x1, y: edge2.y2 - edge2.y1, length: undefined}
+            let m1 = {x: (edge1.x2 + edge1.x1) / 2.0, y: (edge1.y2 + edge1.y1) / 2.0}
+            let m2 = {x: (edge2.x2 + edge2.x1) / 2.0, y: (edge2.y2 + edge2.y1) / 2.0}
+            let vM = {x: m1.x - m2.x, y: m1.y - m2.y, length: undefined}
+
+            v1.length = Math.sqrt(v1.x * v1.x + v1.y * v1.y)
+            v2.length = Math.sqrt(v2.x * v2.x + v2.y * v2.y)
+            vM.length = Math.sqrt(vM.x * vM.x + vM.y * vM.y)
+
+            let angleCompatibility = Math.abs((v1.x * v2.x + v1.y * v2.y) / (v1.length * v2.length));
+
+            let avgLength = (v1.length + v2.length) / 2.0;
+            let scaleCompatibility = 2.0 / ((avgLength / Math.min(v1.length, v2.length)) + (Math.max(v1.length, v2.length) / avgLength));
+
+            let positionCompatibility = avgLength / (avgLength + vM.length)
+
+            // Starting to compute visibility compatibility
+
+            let v1A = {x: edge2.x1 - edge1.x1, y: edge2.y1 - edge1.y1, length: undefined}
+            let v1B = {x: edge2.x2 - edge1.x1, y: edge2.y2 - edge1.y1, length: undefined}
+            let v2A = {x: edge1.x1 - edge2.x1, y: edge1.y1 - edge2.y1, length: undefined}
+            let v2B = {x: edge1.x2 - edge2.x1, y: edge1.y2 - edge2.y1, length: undefined}
+
+            let PQI0x = (v1A.x * v1.x + v1A.y * v1.y) / (v1.x * v1.x + v1.y * v1.y) * v1.x + edge1.x1
+            let PQI0y = (v1A.x * v1.x + v1A.y * v1.y) / (v1.x * v1.x + v1.y * v1.y) * v1.y + edge1.y1
+            let PQI1x = (v1B.x * v1.x + v1B.y * v1.y) / (v1.x * v1.x + v1.y * v1.y) * v1.x + edge1.x1
+            let PQI1y = (v1B.x * v1.x + v1B.y * v1.y) / (v1.x * v1.x + v1.y * v1.y) * v1.y + edge1.y1
+
+            let QPI0x = (v2A.x * v2.x + v2A.y * v2.y) / (v2.x * v2.x + v2.y * v2.y) * v2.x + edge2.x1
+            let QPI0y = (v2A.x * v2.x + v2A.y * v2.y) / (v2.x * v2.x + v2.y * v2.y) * v2.y + edge2.y1
+            let QPI1x = (v2B.x * v2.x + v2B.y * v2.y) / (v2.x * v2.x + v2.y * v2.y) * v2.x + edge2.x1
+            let QPI1y = (v2B.x * v2.x + v2B.y * v2.y) / (v2.x * v2.x + v2.y * v2.y) * v2.y + edge2.y1
+
+            let PQIm = {x: (PQI0x + PQI1x) / 2.0, y: (PQI0y + PQI1y) / 2.0}
+            let QPIm = {x: (QPI0x + QPI1x) / 2.0, y: (QPI0y + QPI1y) / 2.0}
+
+            let vPQm = {x: m1.x - PQIm.x, y: m1.y - PQIm.y, length: undefined}
+            vPQm.length = Math.sqrt(vPQm.x * vPQm.x + vPQm.y * vPQm.y)
+            let vPQI = {x: PQI1x - PQI0x, y: PQI1y - PQI0y, length: undefined}
+            vPQI.length = Math.sqrt(vPQI.x * vPQI.x + vPQI.y * vPQI.y)
+
+            let vQPm = {x: m2.x - QPIm.x, y: m2.y - QPIm.y, length: undefined}
+            vQPm.length = Math.sqrt(vQPm.x * vQPm.x + vQPm.y * vQPm.y)
+            let vQPI = {x: QPI1x - QPI0x, y: QPI1y - QPI0y, length: undefined}
+            vQPI.length = Math.sqrt(vQPI.x * vQPI.x + vQPI.y * vQPI.y)
+
+            let visibilityCompatibility = Math.max(1 - 2 * (vPQm.length) / (vPQI.length), 0)
+            visibilityCompatibility = Math.min(Math.max(1 - 2 * (vPQm.length) / (vPQI.length), 0), visibilityCompatibility)
+
+            let edgeCompatibility = angleCompatibility * scaleCompatibility * positionCompatibility * visibilityCompatibility;
+
+            return edgeCompatibility;
+
+        }
+
+        async function forceDirectedEdgeBundling() {
+            // Implementation of edge bundling algorithm described in the following paper:
+            // Danny Holten and Jarke J. van Wijk, "Force-Directed Edge Bundling for Graph Visualization", Computer Graphics Forum, volume 28, number 3, pages 983-990, 2009.
+            // A typo in the above paper is assumed and fixed in this implementation.
+            // Some inaccurate writing in the above paper with respect to number of subdivision points is assumed and an accurate interpretation of it is imagined in this implementation.
+
+            let data = iterationsData[currentIteration]
+            let dataCopy = []
+            for (let i = 0; i < data.length; i++)
+                dataCopy.push(data[i].slice());
+
+            let edges = []
+
+            for (let i = 0; i < dataCopy.length; i++) {
+                for (let j = 0; j < dataCopy.length; j++) {
+                    if (i !== j && dataCopy[i][6] === dataCopy[j][6]) {
+                        edges.push({
+                            x1: dataCopy[i][10],
+                            y1: dataCopy[i][11],
+                            x2: dataCopy[j][10],
+                            y2: dataCopy[j][11],
+                            subdivisions: [{
+                                x: (dataCopy[i][10] + dataCopy[j][10]) / 2.0,
+                                y: (dataCopy[i][11] + dataCopy[j][11]) / 2.0,
+                                fx: 0.0,
+                                fy: 0.0
+                            }]
+                        });
+                    }
+                }
+            }
+
+            let K = 1
+
+            let iterations = [50, 33, 22, 15, 9, 7]
+            let sizes = [0.04, 0.2, 0.1, 0.05, 0.025, 0.0125]
+            for (let cycle = 0; cycle < 6; cycle++)
+                sizes[cycle] *= 10.0;
+
+            for (let cycle = 0; cycle < 6; cycle++) {
+                for (let iteration = 0; iteration < iterations[cycle]; iteration++) {
+                    document.querySelector("#log").innerHTML = 'Please wait... cycles finished: ' + cycle.toString() + '/6, iterations finished: ' + iteration.toString() + '/' + iterations[cycle].toString()
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    for (let i = 0; i < edges.length; i++) {
+                        for (let k = 0; k < edges[i].subdivisions.length; k++) {
+                            let edgeLength = Math.sqrt((edges[i].x2 - edges[i].x1) * (edges[i].x2 - edges[i].x1) + (edges[i].y2 - edges[i].y1) * (edges[i].y2 - edges[i].y1))
+                            let Kp = K / (edgeLength * edges[i].subdivisions.length)
+                            edges[i].subdivisions[k].fx = 0.0
+                            edges[i].subdivisions[k].fy = 0.0
+                            if (k > 0) {
+                                edges[i].subdivisions[k].fx += Kp * (edges[i].subdivisions[k - 1].x - edges[i].subdivisions[k].x)
+                                edges[i].subdivisions[k].fy += Kp * (edges[i].subdivisions[k - 1].y - edges[i].subdivisions[k].y)
+                            }
+
+                            if (k < edges[i].subdivisions.length - 1) {
+                                edges[i].subdivisions[k].fx += Kp * (edges[i].subdivisions[k + 1].x - edges[i].subdivisions[k].x)
+                                edges[i].subdivisions[k].fy += Kp * (edges[i].subdivisions[k + 1].y - edges[i].subdivisions[k].y)
+                            }
+
+                            for (let j = 0; j < edges.length; j++) {
+                                if (i !== j) {
+                                    let edgeCompatibility = computeEdgeCompatibility(edges[i], edges[j]);
+                                    if (!isFinite(edgeCompatibility))
+                                        alert("Error");
+
+                                    let v = {
+                                        x: edges[j].subdivisions[k].x - edges[i].subdivisions[k].x,
+                                        y: edges[j].subdivisions[k].y - edges[i].subdivisions[k].y,
+                                        length: undefined
+                                    }
+                                    v.length = Math.sqrt(v.x * v.x + v.y * v.y)
+
+                                    if (v.length > 1e-7) {
+                                        edges[i].subdivisions[k].fx += (edgeCompatibility * v.x) / (v.length * v.length)
+                                        edges[i].subdivisions[k].fy += (edgeCompatibility * v.y) / (v.length * v.length)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for (let i = 0; i < edges.length; i++) {
+                        for (let k = 0; k < edges[i].subdivisions.length; k++) {
+                            let length = Math.sqrt(edges[i].subdivisions[k].fx * edges[i].subdivisions[k].fx + edges[i].subdivisions[k].fy * edges[i].subdivisions[k].fy)
+                            if (length > 1e-7) {
+                                edges[i].subdivisions[k].x += (sizes[cycle] / length) * edges[i].subdivisions[k].fx
+                                edges[i].subdivisions[k].y += (sizes[cycle] / length) * edges[i].subdivisions[k].fy
+                            }
+                        }
+                    }
+                }
+
+                for (let i = 0; i < edges.length; i++) {
+                    let subdivisions = edges[i].subdivisions.slice()
+                    edges[i].subdivisions = []
+
+                    for (let j = 0; j < subdivisions.length; j++) {
+                        if (j === 0)
+                            edges[i].subdivisions.push({
+                                x: (edges[i].x1 + subdivisions[j].x) / 2.0,
+                                y: (edges[i].y1 + subdivisions[j].y) / 2.0,
+                                fx: 0.0,
+                                fy: 0.0
+                            });
+                        else
+                            edges[i].subdivisions.push({
+                                x: (subdivisions[j - 1].x + subdivisions[j].x) / 2.0,
+                                y: (subdivisions[j - 1].y + subdivisions[j].y) / 2.0,
+                                fx: 0.0,
+                                fy: 0.0
+                            });
+
+                        edges[i].subdivisions.push(subdivisions[j])
+
+                        if (j === subdivisions.length - 1)
+                            edges[i].subdivisions.push({
+                                x: (edges[i].x2 + subdivisions[j].x) / 2.0,
+                                y: (edges[i].y2 + subdivisions[j].y) / 2.0,
+                                fx: 0.0,
+                                fy: 0.0
+                            });
+                    }
+                }
+            }
+
+            return edges
+        }
+
+        function isEdgesClose(edge1, edge2) {
+            let distanceClosenessThreshold = 5.0;
+
+            const Flatten = globalThis["@flatten-js/core"];
+
+            let subdivisions1 = []
+            let subdivisions2 = []
+
+            for (let i = 3; i < edge1.subdivisions.length; i += 8)
+                subdivisions1.push(edge1.subdivisions[i]);
+
+            for (let i = 3; i < edge2.subdivisions.length; i += 8)
+                subdivisions2.push(edge2.subdivisions[i]);
+
+            for (let i = 0; i <= subdivisions1.length; i++) {
+                for (let j = 0; j <= subdivisions2.length; j++) {
+                    let lineSegment1 = undefined
+                    let lineSegment2 = undefined
+
+                    if (i === 0)
+                        lineSegment1 = Flatten.segment(edge1.x1, edge1.y1, subdivisions1[i].x, subdivisions1[i].y);
+                    else if (i === subdivisions1.length)
+                        lineSegment1 = Flatten.segment(subdivisions1[i - 1].x, subdivisions1[i - 1].y, edge1.x2, edge1.y2);
+                    else
+                        lineSegment1 = Flatten.segment(subdivisions1[i - 1].x, subdivisions1[i - 1].y, subdivisions1[i].x, subdivisions1[i].y);
+
+                    if (j === 0)
+                        lineSegment2 = Flatten.segment(edge2.x1, edge2.y1, subdivisions2[j].x, subdivisions2[j].y);
+                    else if (j === subdivisions2.length)
+                        lineSegment2 = Flatten.segment(subdivisions2[j - 1].x, subdivisions2[j - 1].y, edge2.x2, edge2.y2);
+                    else
+                        lineSegment2 = Flatten.segment(subdivisions2[j - 1].x, subdivisions2[j - 1].y, subdivisions2[j].x, subdivisions2[j].y);
+
+                    let distance = lineSegment1.distanceTo(lineSegment2)[0]
+                    if (distance < distanceClosenessThreshold)
+                        return true;
+                }
+            }
+
+            return false
+        }
+
+        async function clusterEdges(bundledEdges) {
+            document.querySelector("#log").innerHTML = 'Please wait... clustering edges'
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            let edgeClusterNumbers = []
+            for (let i = 0; i < bundledEdges.length; i++)
+                edgeClusterNumbers.push(undefined);
+
+            for (let i = 0; i < bundledEdges.length; i++) {
+                if (i % 5 === 0) {
+                    document.querySelector("#log").innerHTML = 'Please wait... clustering edges ' + (i + 1).toString() + '/' + bundledEdges.length.toString()
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                for (let j = 0; j < i; j++) {
+                    let edgeCompatibility = computeEdgeCompatibility(bundledEdges[i], bundledEdges[j]);
+                    if (edgeCompatibility > 0.2 && isEdgesClose(bundledEdges[i], bundledEdges[j])) {
+                        if (edgeClusterNumbers[i] === undefined)
+                            edgeClusterNumbers[i] = edgeClusterNumbers[j]
+                        else {
+                            for (let k = 0; k < i; k++) {
+                                if (edgeClusterNumbers[k] === edgeClusterNumbers[i])
+                                    edgeClusterNumbers[k] = edgeClusterNumbers[j]
+                            }
+                            edgeClusterNumbers[i] = edgeClusterNumbers[j]
+                        }
+                    }
+                }
+
+                if (edgeClusterNumbers[i] === undefined)
+                    edgeClusterNumbers[i] = i
+            }
+
+            document.querySelector("#log").innerHTML = 'Please wait... clustering edges'
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            let edgeClusters = []
+
+            for (let edgeClusterNumber = 0; edgeClusterNumber < bundledEdges.length; edgeClusterNumber++) {
+                let edgeCluster = []
+                for (let i = 0; i < bundledEdges.length; i++) {
+                    if (edgeClusterNumbers[i] === edgeClusterNumber) {
+                        edgeCluster.push(bundledEdges[i]);
+                    }
+
+                }
+
+                if (edgeCluster.length > 0)
+                    edgeClusters.push(edgeCluster)
+            }
+
+            edgeClusters.sort(function (a, b) {
+                if (a.length < b.length) return 1;
+                if (a.length > b.length) return -1;
+                return 0;
+            });
+
+            for (let i = 0; i < edgeClusters.length; i++)
+                for (let j = 0; j < edgeClusters[i].length; j++)
+                    edgeClusters[i][j].edgeClusterNumber = i;
+
+            console.log(edgeClusters)
+
+            return edgeClusters
+        }
+
+        async function showEdgeClusterMetaBalls(edgeClusters) {
+            document.querySelector("#log").innerHTML = 'Please wait... preparing meta balls'
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            let canvas = document.querySelector("#canvas")
+            for (let metaBallNumber = 1; metaBallNumber <= 2; metaBallNumber++) {
+                let metaBallCanvas = document.querySelector("#meta-ball-canvas-" + metaBallNumber.toString())
+                let contextWidth = canvas.width
+                let contextHeight = canvas.height
+
+                metaBallCanvas.style.width = contextWidth.toString() + 'px'
+                metaBallCanvas.style.height = contextHeight.toString() + 'px'
+                metaBallCanvas.style.border = '1px solid black'
+                metaBallCanvas.style.display = 'block'
+                metaBallCanvas.style.margin = '20px'
+                metaBallCanvas.width = contextWidth
+                metaBallCanvas.height = contextHeight
+
+                const context = metaBallCanvas.getContext('2d');
+                context.clearRect(0, 0, metaBallCanvas.width, metaBallCanvas.height);
+
+                for (let x = 0; x < contextWidth; x++) {
+                    for (let y = 0; y < contextHeight; y++) {
+                        let edgeCluster = edgeClusters[metaBallNumber - 1]
+
+                        let minimumDistanceSquared = Number.POSITIVE_INFINITY
+                        for (let i = 0; i < edgeCluster.length; i++) {
+                            minimumDistanceSquared = Math.min(minimumDistanceSquared, (x - edgeCluster[i].x1) * (x - edgeCluster[i].x1) + (y - edgeCluster[i].y1) * (y - edgeCluster[i].y1))
+                            minimumDistanceSquared = Math.min(minimumDistanceSquared, (x - edgeCluster[i].x2) * (x - edgeCluster[i].x2) + (y - edgeCluster[i].y2) * (y - edgeCluster[i].y2))
+                        }
+
+                        let opacity = 0.8
+                        let spread = 50.0 * 50.0
+                        if (minimumDistanceSquared > 0)
+                            opacity /= Math.pow(Math.E, minimumDistanceSquared / spread);
+
+                        if (metaBallNumber === 1)
+                            context.fillStyle = "rgba(255,0,0," + opacity.toString() + ")"
+                        else
+                            context.fillStyle = "rgba(255,255,0," + opacity.toString() + ")"
+                        context.fillRect(x, y, 1, 1)
+                    }
+                }
+
+            }
+        }
+
+        function showBundledEdges(bundledEdges) {
+            let canvas = document.querySelector("#canvas")
+            let edgeBundlingCanvas = document.querySelector("#edge-bundling-canvas")
+            let contextWidth = canvas.width
+            let contextHeight = canvas.height
+
+            edgeBundlingCanvas.style.width = contextWidth.toString() + 'px'
+            edgeBundlingCanvas.style.height = contextHeight.toString() + 'px'
+            edgeBundlingCanvas.style.border = '1px solid black'
+            edgeBundlingCanvas.style.display = 'block'
+            edgeBundlingCanvas.style.margin = '20px'
+            edgeBundlingCanvas.width = contextWidth
+            edgeBundlingCanvas.height = contextHeight
+
+
+            const context = edgeBundlingCanvas.getContext('2d');
+            context.clearRect(0, 0, edgeBundlingCanvas.width, edgeBundlingCanvas.height);
+
+            for (let i = 0; i < bundledEdges.length; i++) {
+                if (bundledEdges[i].edgeClusterNumber === undefined)
+                    context.strokeStyle = 'black';
+                else if (bundledEdges[i].edgeClusterNumber < 2)
+                    context.strokeStyle = ['red', 'yellow'][bundledEdges[i].edgeClusterNumber]
+                else
+                    context.strokeStyle = 'black';
+
+                context.lineWidth = 1;
+
+                context.beginPath();
+                context.moveTo(bundledEdges[i].x1, bundledEdges[i].y1);
+                for (let j = 0; j < bundledEdges[i].subdivisions.length; j++) {
+                    context.lineTo(bundledEdges[i].subdivisions[j].x, bundledEdges[i].subdivisions[j].y)
+                }
+                context.lineTo(bundledEdges[i].x2, bundledEdges[i].y2);
+                context.stroke();
+            }
+        }
+
+        </script>
+    </head>
+    <body>
+        <div style="padding:5px;background:#BBBBBB;border-radius:5px;">
+            <input type="file" id="file-input" />
+            <button id="show-button">Show</button>
+            <span id="log" style="margin-left:5px;display:inline-block;min-width:200px;"></span>
+            <button id="prev-button" style="display:none;">Previous</button>
+            <button id="next-button" style="display:none;">Next</button>
+            <button id="last-button" style="display:none;">Last</button>
+            <button id="first-button" style="display:none;">First</button>
+            <button id="prev-100-button" style="display:none;">Previous 100</button>
+            <button id="next-100-button" style="display:none;">Next 100</button>
+            <button id="change-colouring-button" style="display:none;">Change colouring</button>
+            <button id="reduce-overlap-button" style="display:none;">Reduce overlap</button>
+            <button id="change-sizing-button" style="display:none;">Change sizing</button>
+            <button id="change-overlap-reduction-rounds-button" style="display:none;">Change overlap reduction rounds</button>
+            <button id="change-yellow-option" style="display:none;">Change yellow option</button>
+            <button id="show-edge-bundling" style="display:none;">Show edge bundling</button>
+            <button id="show-edge-bundling-clustering" style="display:none;">Show edge bundling with clustering</button>
+            <button id="show-meta-balls" style="display:none;">Show meta balls</button>
+        </div>
+        <div>
+            <canvas id="meta-ball-canvas-1" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-2" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="canvas" style="position:absolute;"></canvas>
+            <canvas id="edge-bundling-canvas" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <div id="blue" style="position:absolute;pointer-events: none;"></div>
+            <div id="overlap-reduced" style="position:absolute;pointer-events: none;"></div>
+        </div>
+    </body>
+</html>
