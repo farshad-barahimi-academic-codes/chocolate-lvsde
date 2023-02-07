@@ -954,6 +954,10 @@
             v2.length = Math.sqrt(v2.x * v2.x + v2.y * v2.y)
             vM.length = Math.sqrt(vM.x * vM.x + vM.y * vM.y)
 
+            v1.length=Math.max(v1.length,1e-10)
+            v2.length=Math.max(v2.length,1e-10)
+            vM.length=Math.max(vM.length,1e-10)
+
             let angleCompatibility = Math.abs((v1.x * v2.x + v1.y * v2.y) / (v1.length * v2.length));
 
             let avgLength = (v1.length + v2.length) / 2.0;
@@ -991,6 +995,8 @@
             let vQPI = {x: QPI1x - QPI0x, y: QPI1y - QPI0y, length: undefined}
             vQPI.length = Math.sqrt(vQPI.x * vQPI.x + vQPI.y * vQPI.y)
 
+            vQPI.length=Math.max(vQPI.length,1e-10)
+
             let visibilityCompatibility = Math.max(1 - 2 * (vPQm.length) / (vPQI.length), 0)
             visibilityCompatibility = Math.min(Math.max(1 - 2 * (vPQm.length) / (vPQI.length), 0), visibilityCompatibility)
 
@@ -1016,6 +1022,12 @@
             for (let i = 0; i < dataCopy.length; i++) {
                 for (let j = 0; j < dataCopy.length; j++) {
                     if (i !== j && dataCopy[i][6] === dataCopy[j][6]) {
+                        let vX= dataCopy[i][10] - dataCopy[j][10];
+                        let vY= dataCopy[i][11] - dataCopy[j][11];
+                        let vLen = Math.sqrt(vX * vX + vY * vY);
+                        if(vLen<1e-10)
+                            continue;
+
                         edges.push({
                             x1: dataCopy[i][10],
                             y1: dataCopy[i][11],
