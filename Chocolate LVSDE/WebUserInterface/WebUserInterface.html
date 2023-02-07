@@ -252,6 +252,9 @@
             document.querySelector("#show-meta-balls-2").style.display = 'inline-block'
             document.querySelector("#change-edge-clustering-threshold").style.display = 'inline-block'
             document.querySelector("#change-meta-balls-maximum-spread").style.display = 'inline-block'
+            document.querySelector("#select-caption").style.display = 'inline-block'
+            document.querySelector("#select-input").style.display = 'inline-block'
+            document.querySelector("#select-button").style.display = 'inline-block'
             disableClick = false;
 
             document.querySelector("#prev-button").addEventListener('click', function () {
@@ -411,6 +414,26 @@
                 document.querySelector("#log").innerHTML = 'Meta balls maximum spread changed to '+metaBallsMaximumSpread.toString()
             });
 
+            document.querySelector("#select-button").addEventListener('click', function () {
+                let toSelect = document.querySelector("#select-input").value
+                toSelect=toSelect.replace("(","")
+                toSelect=toSelect.replace(")","")
+                let x=Number(toSelect.split(",")[0])+ document.querySelector("#canvas").getBoundingClientRect().left + window.scrollX;
+                let y=Number(toSelect.split(",")[1])+ document.querySelector("#canvas").getBoundingClientRect().top + window.scrollY;
+                let width=Number(toSelect.split(",")[2])
+                let height=Number(toSelect.split(",")[3])
+
+                const blue = document.querySelector("#blue")
+                blue.style.left = x.toString() + 'px'
+                blue.style.top = y.toString() + 'px'
+                blue.style.width = width.toString()+'px'
+                blue.style.height = height.toString()+'px'
+                if (blue.style.display !== 'block')
+                    blue.style.display = 'block'
+
+                updateBasedOnSelection(x,y,width,height)
+            });
+
         }
 
         function hideButtons() {
@@ -431,6 +454,9 @@
             document.querySelector("#show-meta-balls-2").style.display = 'none'
             document.querySelector("#change-edge-clustering-threshold").style.display = 'none'
             document.querySelector("#change-meta-balls-maximum-spread").style.display = 'none'
+            document.querySelector("#select-caption").style.display = 'none'
+            document.querySelector("#select-input").style.display = 'none'
+            document.querySelector("#select-button").style.display = 'none'
             disableClick = true
         }
 
@@ -1320,14 +1346,14 @@
         </script>
     </head>
     <body>
-        <div style="padding:5px;background:#BBBBBB;border-radius:5px;">
+        <div style="padding:5px;background:#BBBBBB;border-radius:5px;min-height:50px;min-width:1800px;">
             <input type="file" id="file-input" />
             <button id="show-button">Show</button>
             <span id="log" style="margin-left:5px;display:inline-block;min-width:200px;"></span>
-            <button id="prev-button" style="display:none;">Previous</button>
+            <button id="prev-button" style="display:none;margin-bottom:2px;">Previous</button>
             <button id="next-button" style="display:none;">Next</button>
-            <button id="last-button" style="display:none;">Last</button>
             <button id="first-button" style="display:none;">First</button>
+            <button id="last-button" style="display:none;">Last</button>
             <button id="prev-100-button" style="display:none;">Previous 100</button>
             <button id="next-100-button" style="display:none;">Next 100</button>
             <button id="change-colouring-button" style="display:none;">Change colouring</button>
@@ -1341,6 +1367,9 @@
             <button id="show-meta-balls-2" style="display:none;">Show meta balls 2</button>
             <button id="change-edge-clustering-threshold" style="display:none;">Change edge clustering threshold</button>
             <button id="change-meta-balls-maximum-spread" style="display:none;">Change meta balls maximum spread</button>
+            <span id="select-caption" style="display: none;">Select rectangle: (x,y,w,h)</span>
+            <input type="text" id="select-input" style="width:150px;display:none;"/>
+            <button id="select-button" style="display:none;">Select</button>
         </div>
         <div>
             <canvas id="meta-ball-canvas-1" style="position:absolute;display:none;pointer-events: none;"></canvas>
