@@ -1,22 +1,22 @@
 /*
-	This project is an implementation of LVSDE dimensionality reduction technique written in Go programming language (majority of the code volume) and Python programming language, sometimes interoperating through C programming language interface of Go as the intermediate language interface, in addition to some codes written in Javascript, CSS and HTML.
+This project is an implementation of LVSDE dimensionality reduction technique written in Go programming language (majority of the code volume) and Python programming language, sometimes interoperating through C programming language interface of Go as the intermediate language interface, in addition to some codes written in Javascript, CSS and HTML.
 
-	Farshad Barahimi is the only code author for this project including but not limited to this file. All codes in this project including but not limited to this file are written by Farshad Barahimi.
+Farshad Barahimi is the only code author for this project including but not limited to this file. All codes in this project including but not limited to this file are written by Farshad Barahimi.
 
-	LVSDE stands for Layered Vertex Splitting Data Embedding.
-	For more information about LVSDE dimensionality reduction technique (algorithm) look at the following arXiv preprint:
-	Farshad Barahimi, "Multi-point dimensionality reduction to improve projection layout reliability",  arXiv:2101.06224v5, 2022.
+LVSDE stands for Layered Vertex Splitting Data Embedding.
+For more information about LVSDE dimensionality reduction technique (algorithm) look at the following arXiv preprint:
+Farshad Barahimi, "Multi-point dimensionality reduction to improve projection layout reliability",  arXiv:2101.06224v5, 2022.
 
-	The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
+The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
 
-	Copyright notice for this code (this implementation of LVSDE):
-	Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+Copyright notice for this code (this implementation of LVSDE):
+Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
 
-	"Chocolate LVSDE" is the name of this implementation of LVSDE.
+"Chocolate LVSDE" is the name of this implementation of LVSDE.
 
-	The purpose of writing this code is academic.
+The purpose of writing this code is academic.
 
-	While this project sometimes uses UMAP and for comparison t-SNE, the author is not the author of UMAP or t-SNE and the copyright notice above does not correspond to implementations of UMAP and t-SNE in umap-learn library or scikit-learn library.
+While this project sometimes uses UMAP and for comparison t-SNE, the author is not the author of UMAP or t-SNE and the copyright notice above does not correspond to implementations of UMAP and t-SNE in umap-learn library or scikit-learn library.
 */
 package main
 
@@ -28,28 +28,30 @@ import (
 )
 
 /*
-	Compilation guide:
-	To compile make sure the following environmental variables are set correctly:
-	CGO_ENABLED, CGO_CFLAGS, CGO_LDFLAGS and CC
+Compilation guide:
+For Windows, compile with MinGW64-w64 binaries such as prebuilt binaries from winlibs.com. For Linux compile with GCC.
+To compile make sure the following environmental variables are set correctly:
+CGO_ENABLED, CGO_CFLAGS, CGO_LDFLAGS and CC
 
-		Example for Windows:
-		CGO_ENABLED=1
-		CGO_CFLAGS=-IC:/Users/TheUser/miniconda3/envs/temp-env/include -DMS_WIN64
-		CGO_LDFLAGS=-LC:/Users/TheUser/miniconda3/envs/temp-env/libs -lpython310 -lpthread -lm
-		CC=gcc
+	Example for Windows:
+	CGO_ENABLED=1
+	CGO_CFLAGS=-IC:/Users/TheUser/miniconda3/envs/dev-env/include -DMS_WIN64
+	CGO_LDFLAGS=-LC:/Users/TheUser/miniconda3/envs/dev-env/libs -lpython310 -lpthread -lm
+	CC=gcc
 
-		Example for Linux:
-		CGO_ENABLED=1
-		CGO_CFLAGS=-I/usr/include/python3.10
-		CGO_LDFLAGS=-L/usr/lib/x86_64-linux-gnu -l:libpython3.10.a -lpthread -lm -lexpat -lz
-		CC=x86_64-linux-gnu-gcc-11
+	Example for Linux:
+	CGO_ENABLED=1
+	CGO_CFLAGS=-I/usr/include/python3.10
+	CGO_LDFLAGS=-L/usr/lib/x86_64-linux-gnu -l:libpython3.10.a -lpthread -lm -lexpat -lz
+	CC=x86_64-linux-gnu-gcc-11
 
-	Run guide:
-	To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
+Run guide:
+To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
+On Windows, also make sure the location of python310.dll such as C:\Users\TheUser\miniconda3\envs\dev-env is in PATH environmental variable.
 */
 func main() {
 
-	fmt.Println("Chocolate LVSDE 1.16")
+	fmt.Println("Chocolate LVSDE 1.17")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")

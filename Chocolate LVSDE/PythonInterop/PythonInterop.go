@@ -20,44 +20,44 @@ package PythonInterop
 // #define PY_SSIZE_T_CLEAN
 // #include <Python.h>
 import "C"
-import "unsafe"
 
 func RunPythonFunction(functionCode string, functionName string, functionParameter []float64, functionOutputSize int) []float64 {
 	functionParameterSize := len(functionParameter)
 
-	defer C.Py_Finalize()
+	//defer C.Py_Finalize()
 	C.Py_Initialize()
 
 	moduleName := C.CString("functionModule")
-	defer C.free(unsafe.Pointer(moduleName))
+	//defer C.free(unsafe.Pointer(moduleName))
 
 	moduleObject := C.PyModule_New(moduleName)
-	defer C.Py_DecRef(moduleObject)
+	//defer C.Py_DecRef(moduleObject)
 
 	temp1 := C.CString("__file__")
-	defer C.free(unsafe.Pointer(temp1))
+	//defer C.free(unsafe.Pointer(temp1))
 	temp2 := C.CString("")
-	defer C.free(unsafe.Pointer(temp2))
+	//defer C.free(unsafe.Pointer(temp2))
 	C.PyModule_AddStringConstant(moduleObject, temp1, temp2)
 
 	moduleDictionaryObject := C.PyModule_GetDict(moduleObject)
-	defer C.Py_DecRef(moduleDictionaryObject)
+	//defer C.Py_DecRef(moduleDictionaryObject)
 
 	emptyDictionary := C.PyDict_New()
-	defer C.Py_DecRef(emptyDictionary)
+	//defer C.Py_DecRef(emptyDictionary)
 
 	functionCodeC := C.CString(functionCode)
-	defer C.free(unsafe.Pointer(functionCodeC))
-	functionCodeObject := C.PyRun_String(functionCodeC, C.Py_file_input, emptyDictionary, moduleDictionaryObject)
-	defer C.Py_DecRef(functionCodeObject)
+	//defer C.free(unsafe.Pointer(functionCodeC))
+	C.PyRun_String(functionCodeC, C.Py_file_input, emptyDictionary, moduleDictionaryObject)
+	//functionCodeObject := C.PyRun_String(functionCodeC, C.Py_file_input, emptyDictionary, moduleDictionaryObject)
+	//defer C.Py_DecRef(functionCodeObject)
 
 	functionNameC := C.CString(functionName)
-	defer C.free(unsafe.Pointer(functionNameC))
+	//defer C.free(unsafe.Pointer(functionNameC))
 	functionObject := C.PyObject_GetAttrString(moduleObject, functionNameC)
-	defer C.Py_DecRef(functionObject)
+	//defer C.Py_DecRef(functionObject)
 
 	functionParameterObject := C.PyTuple_New(CastNumberFromToC(functionParameterSize))
-	defer C.Py_DecRef(functionParameterObject)
+	//defer C.Py_DecRef(functionParameterObject)
 
 	for i := 0; i < functionParameterSize; i++ {
 		functionParameterTempObject := C.PyFloat_FromDouble(C.double(functionParameter[i]))
@@ -65,7 +65,7 @@ func RunPythonFunction(functionCode string, functionName string, functionParamet
 	}
 
 	functionReturnObject := C.PyObject_CallObject(functionObject, functionParameterObject)
-	defer C.Py_DecRef(functionReturnObject)
+	//defer C.Py_DecRef(functionReturnObject)
 
 	if functionReturnObject == nil {
 		C.PyErr_PrintEx(0)

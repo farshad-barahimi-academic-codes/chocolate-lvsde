@@ -676,9 +676,9 @@ func (dataEmbeddingTechniqueLVSDE *DataEmbeddingTechniqueLVSDE) SplitVertex(data
 		horizontalDifference := neighbourDataAbstractionUnit.VisualSpaceCoordinates[neighbourVisualSpaceIndex][0] - dataAbstractionUnit.VisualSpaceCoordinates[neighbourVisualSpaceIndex][0]
 		verticalDifference := neighbourDataAbstractionUnit.VisualSpaceCoordinates[neighbourVisualSpaceIndex][1] - dataAbstractionUnit.VisualSpaceCoordinates[neighbourVisualSpaceIndex][1]
 
-		pressure := dataEmbeddingTechniqueLVSDE.PrecomputedCosineOfAxisAngle[selectedAxis] * horizontalDifference
-		pressure += dataEmbeddingTechniqueLVSDE.PrecomputedSineOfAxisAngle[selectedAxis] * verticalDifference
-		if pressure < 0 {
+		indicatorBasedOnCausedPressureOnSelectedAxis := dataEmbeddingTechniqueLVSDE.PrecomputedCosineOfAxisAngle[selectedAxis] * horizontalDifference
+		indicatorBasedOnCausedPressureOnSelectedAxis += dataEmbeddingTechniqueLVSDE.PrecomputedSineOfAxisAngle[selectedAxis] * verticalDifference
+		if indicatorBasedOnCausedPressureOnSelectedAxis < 0 {
 			visualNeighboursIndices1 = append(visualNeighboursIndices1, [2]int32{neighbourOriginalSpaceIndex, neighbourVisualSpaceIndex})
 		} else {
 			visualNeighboursIndices2 = append(visualNeighboursIndices2, [2]int32{neighbourOriginalSpaceIndex, neighbourVisualSpaceIndex})
