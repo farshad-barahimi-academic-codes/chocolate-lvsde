@@ -25,6 +25,7 @@ import (
 	"github.com/farshad-barahimi-academic-codes/chocolate-lvsde/DataAbstraction"
 	"github.com/farshad-barahimi-academic-codes/chocolate-lvsde/WebUserInterface"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -35,6 +36,8 @@ import (
 )
 
 import "github.com/fogleman/gg"
+
+var Chmod fs.FileMode = 0700
 
 func ReadDataAbstractionSetFromDistancesFile(filePath string, numberOfInitialDataAbstractionUnits int32, maximumClassLabelNumber int32) DataAbstraction.DataAbstractionSet {
 	var dataAbstractionSet DataAbstraction.DataAbstractionSet
@@ -377,7 +380,10 @@ func WriteEmbeddingToFile(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbs
 		}
 	}
 
-	context.SavePNG(filePath)
+	file, _ := os.Create(filePath)
+	file.Chmod(Chmod)
+	context.EncodePNG(file)
+	file.Close()
 }
 
 func ReadImagesFileGrayscaleSingleChannel(filePath string, dataAbstractionSet *DataAbstraction.DataAbstractionSet, imageWidth int32, imagesFileHasClassLabelNumbers bool) {
@@ -577,7 +583,7 @@ func WriteLegendFileHtml(filePath string, classLabels []string, coloursList []st
 	html.WriteString("</html>\r\n")
 
 	bytes, _ := ioutil.ReadAll(strings.NewReader(html.String()))
-	ioutil.WriteFile(filePath, bytes, 640)
+	ioutil.WriteFile(filePath, bytes, Chmod)
 
 }
 
@@ -586,5 +592,5 @@ func WriteShowFileHtml(outputDirectory string, dataAbstractionUnitVisibilities [
 	html.WriteString(WebUserInterface.WebUserInterfaceCode)
 
 	bytes, _ := ioutil.ReadAll(strings.NewReader(html.String()))
-	ioutil.WriteFile(filepath.Join(outputDirectory, "show.html"), bytes, 640)
+	ioutil.WriteFile(filepath.Join(outputDirectory, "show.html"), bytes, Chmod)
 }

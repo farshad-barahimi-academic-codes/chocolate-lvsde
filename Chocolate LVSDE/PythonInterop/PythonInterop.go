@@ -17,8 +17,7 @@
 
 package PythonInterop
 
-// #cgo CFLAGS: -IC:/Users/TheUser/miniconda3/envs/temp-env/include -DMS_WIN64
-// #cgo LDFLAGS: -LC:/Users/TheUser/miniconda3/envs/temp-env/libs -lpython310 -lpthread -lm
+// #define PY_SSIZE_T_CLEAN
 // #include <Python.h>
 import "C"
 import "unsafe"
@@ -57,12 +56,12 @@ func RunPythonFunction(functionCode string, functionName string, functionParamet
 	functionObject := C.PyObject_GetAttrString(moduleObject, functionNameC)
 	defer C.Py_DecRef(functionObject)
 
-	functionParameterObject := C.PyTuple_New(C.longlong(functionParameterSize))
+	functionParameterObject := C.PyTuple_New(C.long(functionParameterSize))
 	defer C.Py_DecRef(functionParameterObject)
 
 	for i := 0; i < functionParameterSize; i++ {
 		functionParameterTempObject := C.PyFloat_FromDouble(C.double(functionParameter[i]))
-		C.PyTuple_SetItem(functionParameterObject, C.longlong(i), functionParameterTempObject)
+		C.PyTuple_SetItem(functionParameterObject, C.long(i), functionParameterTempObject)
 	}
 
 	functionReturnObject := C.PyObject_CallObject(functionObject, functionParameterObject)
@@ -76,7 +75,7 @@ func RunPythonFunction(functionCode string, functionName string, functionParamet
 	functionOutput := make([]float64, functionOutputSize)
 
 	for i := 0; i < functionOutputSize; i++ {
-		functionOutputTempObject := C.PyTuple_GetItem(functionReturnObject, C.longlong(i))
+		functionOutputTempObject := C.PyTuple_GetItem(functionReturnObject, C.long(i))
 		functionOutput[i] = float64(C.PyFloat_AsDouble(functionOutputTempObject))
 
 	}

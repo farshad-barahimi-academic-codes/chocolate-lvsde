@@ -29,13 +29,26 @@ import (
 
 /*
 	Compilation guide:
-	To compile make sure cgo CFLAGS and LDFLAGS at PythonInterop/PythonInterop.go are set correctly.
+	To compile make sure the following environmental variables are set correctly:
+	CGO_ENABLED, CGO_CFLAGS, CGO_LDFLAGS and CC
+
+		Example for Windows:
+		CGO_ENABLED=1
+		CGO_CFLAGS=-IC:/Users/TheUser/miniconda3/envs/temp-env/include -DMS_WIN64
+		CGO_LDFLAGS=-LC:/Users/TheUser/miniconda3/envs/temp-env/libs -lpython310 -lpthread -lm
+		CC=gcc
+
+		Example for Linux:
+		CGO_ENABLED=1
+		CGO_CFLAGS=-I/usr/include/python3.10
+		CGO_LDFLAGS=-L/usr/lib/x86_64-linux-gnu -l:libpython3.10.a -lpthread -lm -lexpat -lz
+		CC=x86_64-linux-gnu-gcc-11
 
 	Run guide:
 	To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
 */
 func main() {
-	fmt.Println("Chocolate LVSDE 1.11")
+	fmt.Println("Chocolate LVSDE 1.12")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")

@@ -115,7 +115,7 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 
 		_, err := os.Stat(embeddingSpecification.OutputDirectory)
 		if os.IsNotExist(err) {
-			os.MkdirAll(embeddingSpecification.OutputDirectory, 600)
+			os.MkdirAll(embeddingSpecification.OutputDirectory, FileReadingOrWriting.Chmod)
 		} else {
 			panic("Not finished successfully. Output directory cannot be created because it exists.")
 		}
@@ -484,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.11"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.12"
 
 		lastIteration := 1829
 
@@ -497,7 +497,7 @@ def SomeDimensionalityReductions(*x):
 		}
 
 		jsonBytes, _ := json.MarshalIndent(embeddingDetails.EmbeddingIterations[lastIteration], "", "\t")
-		ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "last_iteration.json"), jsonBytes, 640)
+		ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "last_iteration.json"), jsonBytes, FileReadingOrWriting.Chmod)
 
 		jsonBytes, _ = json.MarshalIndent(embeddingDetails.EmbeddingIterations, "", "\t")
 		var zipFile *os.File
@@ -543,9 +543,9 @@ def SomeDimensionalityReductions(*x):
 
 		if compareWithOtherMethods {
 
-			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare"), 600)
-			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding"), 600)
-			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding"), 600)
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare"), FileReadingOrWriting.Chmod)
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding"), FileReadingOrWriting.Chmod)
+			os.MkdirAll(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding"), FileReadingOrWriting.Chmod)
 
 			embeddingCompare1 = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
 
@@ -564,7 +564,7 @@ def SomeDimensionalityReductions(*x):
 			}
 
 			jsonBytes, _ = json.MarshalIndent(embeddingCompare1, "", "\t")
-			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "compare_embedding.json"), jsonBytes, 640)
+			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "compare_embedding.json"), jsonBytes, FileReadingOrWriting.Chmod)
 
 			embeddingCompare2 = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
 
@@ -583,7 +583,7 @@ def SomeDimensionalityReductions(*x):
 			}
 
 			jsonBytes, _ = json.MarshalIndent(embeddingCompare2, "", "\t")
-			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "compare_embedding.json"), jsonBytes, 640)
+			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "compare_embedding.json"), jsonBytes, FileReadingOrWriting.Chmod)
 		}
 
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
@@ -675,12 +675,12 @@ def SomeDimensionalityReductions(*x):
 				report.WriteString("#, #, #, #\r\n")
 			}
 
-			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "report.csv"), []byte(report.String()), 600)
+			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "report.csv"), []byte(report.String()), FileReadingOrWriting.Chmod)
 			if err != nil {
 				panic("Not finished successfully.")
 			}
 
-			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "confusionMatrices.txt"), []byte(confusionMatrices.String()), 600)
+			err = ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "confusionMatrices.txt"), []byte(confusionMatrices.String()), FileReadingOrWriting.Chmod)
 			if err != nil {
 				panic("Not finished successfully.")
 			}
