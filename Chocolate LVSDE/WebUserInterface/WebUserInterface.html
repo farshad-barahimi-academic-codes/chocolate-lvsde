@@ -96,6 +96,10 @@
         let overlapReductionRoundsOption = 0
         let yellowOption = true
         let disableClick = true
+        let edgeClusteringThreshold=0.4
+        let edgeClusteringThresholdOption=0
+        let metaBallsMaximumSpread=100.0
+        let metaBallsMaximumSpreadOption=0
 
         function readData(bsonFileContentZipped) {
             let new_zip = new JSZip();
@@ -245,6 +249,9 @@
             document.querySelector("#show-edge-bundling").style.display = 'inline-block'
             document.querySelector("#show-edge-bundling-clustering").style.display = 'inline-block'
             document.querySelector("#show-meta-balls").style.display = 'inline-block'
+            document.querySelector("#show-meta-balls-2").style.display = 'inline-block'
+            document.querySelector("#change-edge-clustering-threshold").style.display = 'inline-block'
+            document.querySelector("#change-meta-balls-maximum-spread").style.display = 'inline-block'
             disableClick = false;
 
             document.querySelector("#prev-button").addEventListener('click', function () {
@@ -372,6 +379,38 @@
                 });
             });
 
+            document.querySelector("#show-meta-balls-2").addEventListener('click', function () {
+                hideButtons()
+                document.querySelector("#log").innerHTML = 'Please wait...'
+                forceDirectedEdgeBundling().then(function (bundledEdges) {
+                    clusterEdges(bundledEdges).then(function (edgeClusters) {
+                        showEdgeClusterMetaBalls(edgeClusters).then(function () {
+                            showIteration(currentIteration);
+
+                            for (let i = 0; i < bundledEdges.length; i++)
+                                bundledEdges[i].edgeClusterNumber = undefined
+
+                            showBundledEdges(bundledEdges);
+                            logCurrentIteration();
+                        });
+                    });
+                });
+            });
+
+            document.querySelector("#change-edge-clustering-threshold").addEventListener('click', function () {
+                edgeClusteringThresholdOption = (edgeClusteringThresholdOption + 1) % 6
+                edgeClusteringThreshold=[0.4,0.6,0.8,0.2,0.15,0.1][edgeClusteringThresholdOption]
+
+                document.querySelector("#log").innerHTML = 'Edge clustering threshold changed to '+edgeClusteringThreshold.toString()
+            });
+
+            document.querySelector("#change-meta-balls-maximum-spread").addEventListener('click', function () {
+                metaBallsMaximumSpreadOption = (metaBallsMaximumSpreadOption + 1) % 4
+                metaBallsMaximumSpread=[100.0,150.0,200.0,50.0][metaBallsMaximumSpreadOption]
+
+                document.querySelector("#log").innerHTML = 'Meta balls maximum spread changed to '+metaBallsMaximumSpread.toString()
+            });
+
         }
 
         function hideButtons() {
@@ -389,6 +428,9 @@
             document.querySelector("#show-edge-bundling").style.display = 'none'
             document.querySelector("#show-edge-bundling-clustering").style.display = 'none'
             document.querySelector("#show-meta-balls").style.display = 'none'
+            document.querySelector("#show-meta-balls-2").style.display = 'none'
+            document.querySelector("#change-edge-clustering-threshold").style.display = 'none'
+            document.querySelector("#change-meta-balls-maximum-spread").style.display = 'none'
             disableClick = true
         }
 
@@ -1117,7 +1159,7 @@
 
                 for (let j = 0; j < i; j++) {
                     let edgeCompatibility = computeEdgeCompatibility(bundledEdges[i], bundledEdges[j]);
-                    if (edgeCompatibility > 0.2 && isEdgesClose(bundledEdges[i], bundledEdges[j])) {
+                    if (edgeCompatibility > edgeClusteringThreshold && isEdgesClose(bundledEdges[i], bundledEdges[j])) {
                         if (edgeClusterNumbers[i] === undefined)
                             edgeClusterNumbers[i] = edgeClusterNumbers[j]
                         else {
@@ -1172,7 +1214,10 @@
             await new Promise(resolve => setTimeout(resolve, 100));
 
             let canvas = document.querySelector("#canvas")
-            for (let metaBallNumber = 1; metaBallNumber <= 2; metaBallNumber++) {
+            for (let metaBallNumber = 1; metaBallNumber <= 10; metaBallNumber++) {
+                if(metaBallNumber>edgeClusters.length)
+                    break;
+
                 let metaBallCanvas = document.querySelector("#meta-ball-canvas-" + metaBallNumber.toString())
                 let contextWidth = canvas.width
                 let contextHeight = canvas.height
@@ -1199,14 +1244,31 @@
                         }
 
                         let opacity = 0.8
-                        let spread = 50.0 * 50.0
+                        let spread = metaBallsMaximumSpread * edgeCluster.length / edgeClusters[0].length
                         if (minimumDistanceSquared > 0)
-                            opacity /= Math.pow(Math.E, minimumDistanceSquared / spread);
+                            opacity /= Math.pow(Math.E, minimumDistanceSquared / (spread*spread));
 
                         if (metaBallNumber === 1)
-                            context.fillStyle = "rgba(255,0,0," + opacity.toString() + ")"
+                            context.fillStyle = "rgba(255,0,0," + opacity.toString() + ")";
+                        else if (metaBallNumber === 2)
+                            context.fillStyle = "rgba(255,255,0," + opacity.toString() + ")";
+                        else if (metaBallNumber === 3)
+                            context.fillStyle = "rgba(0,0,255," + opacity.toString() + ")";
+                        else if (metaBallNumber === 4)
+                            context.fillStyle = "rgba(0,255,0," + opacity.toString() + ")";
+                        else if (metaBallNumber === 5)
+                            context.fillStyle = "rgba(0,255,255," + opacity.toString() + ")";
+                        else if (metaBallNumber === 6)
+                            context.fillStyle = "rgba(255,0,255," + opacity.toString() + ")";
+                        else if (metaBallNumber === 7)
+                            context.fillStyle = "rgba(0,255,128," + opacity.toString() + ")";
+                        else if (metaBallNumber === 8)
+                            context.fillStyle = "rgba(128,0,255," + opacity.toString() + ")";
+                        else if (metaBallNumber === 9)
+                            context.fillStyle = "rgba(255,128,0," + opacity.toString() + ")";
                         else
-                            context.fillStyle = "rgba(255,255,0," + opacity.toString() + ")"
+                            context.fillStyle = "rgba(128,0,0," + opacity.toString() + ")";
+
                         context.fillRect(x, y, 1, 1)
                     }
                 }
@@ -1232,18 +1294,14 @@
             const context = edgeBundlingCanvas.getContext('2d');
             context.clearRect(0, 0, edgeBundlingCanvas.width, edgeBundlingCanvas.height);
 
-            let metaBallsShown=true;
-
             for (let i = 0; i < bundledEdges.length; i++) {
                 if (bundledEdges[i].edgeClusterNumber === undefined)
                     context.strokeStyle = 'black';
-                else if (bundledEdges[i].edgeClusterNumber < 2){
-                    if(metaBallsShown)
-                        context.strokeStyle = ['#660000', 'yellow'][bundledEdges[i].edgeClusterNumber]
-                    else
-                        context.strokeStyle = ['red', 'yellow'][bundledEdges[i].edgeClusterNumber]
+                else if (bundledEdges[i].edgeClusterNumber < 10){
+                        context.strokeStyle = ['#800000', '#FF8000','#00FFFF','#00FF80',
+                            '#0000FF','#8000FF','#00FF00','#FF00FF',
+                            '#FFFF00','#FF0000'][bundledEdges[i].edgeClusterNumber];
                 }
-
                 else
                     context.strokeStyle = 'black';
 
@@ -1280,10 +1338,21 @@
             <button id="show-edge-bundling" style="display:none;">Show edge bundling</button>
             <button id="show-edge-bundling-clustering" style="display:none;">Show edge bundling with clustering</button>
             <button id="show-meta-balls" style="display:none;">Show meta balls</button>
+            <button id="show-meta-balls-2" style="display:none;">Show meta balls 2</button>
+            <button id="change-edge-clustering-threshold" style="display:none;">Change edge clustering threshold</button>
+            <button id="change-meta-balls-maximum-spread" style="display:none;">Change meta balls maximum spread</button>
         </div>
         <div>
             <canvas id="meta-ball-canvas-1" style="position:absolute;display:none;pointer-events: none;"></canvas>
             <canvas id="meta-ball-canvas-2" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-3" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-4" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-5" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-6" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-7" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-8" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-9" style="position:absolute;display:none;pointer-events: none;"></canvas>
+            <canvas id="meta-ball-canvas-10" style="position:absolute;display:none;pointer-events: none;"></canvas>
             <canvas id="canvas" style="position:absolute;"></canvas>
             <canvas id="edge-bundling-canvas" style="position:absolute;display:none;pointer-events: none;"></canvas>
             <div id="blue" style="position:absolute;pointer-events: none;"></div>
