@@ -484,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.14"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.15"
 
 		lastIteration := 1829
 
@@ -516,12 +516,26 @@ def SomeDimensionalityReductions(*x):
 		zipFile.Close()
 
 		bsonBytes, _ := bson.Marshal(embeddingDetails)
-		zipFile, err = os.Create(filepath.Join(embeddingSpecification.OutputDirectory, "embedding_details.bson.zip"))
+		zipFile, err = os.Create(filepath.Join(embeddingSpecification.OutputDirectory, "embedding.archive"))
 		if err != nil {
 			panic("Not finished successfully.")
 		}
 		zipWriter = zip.NewWriter(zipFile)
-		writer, err = zipWriter.Create("embedding_details.bson")
+		writer, err = zipWriter.Create("archive.bson")
+		if err != nil {
+			panic("Not finished successfully.")
+		}
+		writer.Write(bsonBytes)
+		zipWriter.Close()
+		zipFile.Close()
+
+		bsonBytes, _ = bson.Marshal(embeddingDetails.ToEmbeddedData())
+		zipFile, err = os.Create(filepath.Join(embeddingSpecification.OutputDirectory, "embedded_data.VCED"))
+		if err != nil {
+			panic("Not finished successfully.")
+		}
+		zipWriter = zip.NewWriter(zipFile)
+		writer, err = zipWriter.Create("embedded_data.VCED.uncompressed")
 		if err != nil {
 			panic("Not finished successfully.")
 		}

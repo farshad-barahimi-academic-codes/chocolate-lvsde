@@ -104,7 +104,7 @@
         function readData(bsonFileContentZipped) {
             let new_zip = new JSZip();
             new_zip.loadAsync(new Uint8Array(bsonFileContentZipped)).then(function (zip) {
-                zip.file("embedding_details.bson").async("uint8array", function updateCallback(metadata) {
+                zip.file("archive.bson").async("uint8array", function updateCallback(metadata) {
                     document.querySelector("#log").innerHTML = 'Please wait... ' + (metadata.percent / 2).toFixed(1) + '%';
                 }).then(function (bsonFileContent) {
                     const embeddingDetails = BSON.deserialize(bsonFileContent);
@@ -1347,7 +1347,7 @@
     </head>
     <body>
         <div style="padding:5px;background:#BBBBBB;border-radius:5px;min-height:50px;min-width:1800px;">
-            <input type="file" id="file-input" />
+            <input type="file" id="file-input" accept=".archive"/>
             <button id="show-button">Show</button>
             <span id="log" style="margin-left:5px;display:inline-block;min-width:200px;"></span>
             <button id="prev-button" style="display:none;margin-bottom:2px;">Previous</button>

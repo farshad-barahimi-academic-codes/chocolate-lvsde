@@ -22,6 +22,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"strings"
 )
 
 type DataAbstractionUnit struct {
@@ -77,6 +78,44 @@ type EmbeddingDetails struct {
 	ImagesRedGreenBlueChannels                      [][]uint8                          `json:"images_red_green_blue_channels" bson:"images_red_green_blue_channels"`
 	ImagesGrayscaleSingleChannel                    [][]uint8                          `json:"images_grayscale_single_channel" bson:"images_grayscale_single_channel"`
 	VersionOfUsedChocolateLVSDE                     string                             `json:"version_of_used_chocolate_lvsde" bson:"version_of_used_chocolate_lvsde"`
+}
+
+type HyperDataAbstractionUnits struct {
+	ZeroBasedIndex       int32               `json:"zero_based_index" bson:"zero_based_index"`
+	IterationProjections [][]HyperProjection `json:"iteration_projections" bson:"iteration_projections"`
+	SingleClassNumber    int32               `json:"single_class_number" bson:"single_class_number"`
+	ExtraClassNumbers    []int32             `json:"extra_class_numbers" bson:"extra_class_numbers"`
+	ShortTextInfo        string              `json:"short_text_info" bson:"short_text_info"`
+	LongTextInfo         string              `json:"long_text_info" bson:"long_text_info"`
+	BinaryInfo           [][]uint8           `json:"binary_info" bson:"binary_info"`
+	BinaryInfoTypes      []string            `json:"binary_info_types" bson:"binary_info_types"`
+}
+
+type HyperProjection struct {
+	X               float64   `json:"x" bson:"x"`
+	Y               float64   `json:"y" bson:"y"`
+	ExtraDimensions []float64 `json:"extra_dimensions" bson:"extra_dimensions"`
+	Layer           int32     `json:"layer" bson:"layer"`
+}
+
+type EmbeddedData struct {
+	FileFormat                             string                      `json:"file_format" bson:"file_format"`
+	FileStructureVersion                   []int32                     `json:"file_structure_version" bson:"file_structure_version"`
+	DataInstances                          []HyperDataAbstractionUnits `json:"data_instances" bson:"data_instances"`
+	IsRedGray                              bool                        `json:"is_red_gray" bson:"is_red_gray"`
+	IsStrictRedGray                        bool                        `json:"is_strict_red_gray" bson:"is_strict_red_gray"`
+	RedLayerNumber                         *int32                      `json:"red_layer_number" bson:"red_layer_number"`
+	GrayLayerNumber                        *int32                      `json:"gray_layer_number" bson:"gray_layer_number"`
+	LayerNames                             []string                    `json:"layer_names" bson:"layer_names"`
+	EmbeddingMethodName                    string                      `json:"embedding_method_name" bson:"embedding_method_name"`
+	DataSetName                            string                      `json:"data_set_name" bson:"data_set_name"`
+	EmbeddingMethodParameters              string                      `json:"embedding_method_parameters" bson:"embedding_method_parameters"`
+	HasImages                              bool                        `json:"has_images" bson:"has_images"`
+	HasShortTextInfo                       bool                        `json:"has_short_text_info" bson:"has_short_text_info"`
+	HasLongTextInfo                        bool                        `json:"has_long_text_info" bson:"has_long_text_info"`
+	HasMultipleClassNumbersPerDataInstance bool                        `json:"has_multiple_class_numbers_per_data_instance" bson:"has_multiple_class_numbers_per_data_instance"`
+	SingleClassLabels                      []string                    `json:"single_class_labels" bson:"single_class_labels"`
+	ExtraClassesLabels                     [][]string                  `json:"extra_classes_labels" bson:"extra_classes_labels"`
 }
 
 func (dataAbstractionUnit *DataAbstractionUnit) SetDefaultValues() {
@@ -388,4 +427,65 @@ func (dataAbstractionUnit *DataAbstractionUnit) CreateImageRGB() *image.RGBA {
 	}
 
 	return img
+}
+
+func (embeddingDetails *EmbeddingDetails) ToEmbeddedData() *EmbeddedData {
+	embeddedData := new(EmbeddedData)
+
+	embeddedData.FileFormat = "Versatile Cartesian Embedded Data File Format (VCED)"
+	embeddedData.FileStructureVersion = []int32{1, 0, 0}
+	embeddedData.DataInstances = make([]HyperDataAbstractionUnits, len(embeddingDetails.EmbeddingIterations[0]))
+	for i := 0; i < len(embeddingDetails.EmbeddingIterations[0]); i++ {
+		embeddedData.DataInstances[i].IterationProjections = make([][]HyperProjection, len(embeddingDetails.EmbeddingIterations))
+		embeddedData.DataInstances[i].ZeroBasedIndex = embeddingDetails.EmbeddingIterations[0][i].DataAbstractionUnitNumber
+		embeddedData.DataInstances[i].SingleClassNumber = embeddingDetails.EmbeddingIterations[0][i].ClassLabelNumber
+		embeddedData.DataInstances[i].ExtraClassNumbers = []int32{}
+		embeddedData.DataInstances[i].ShortTextInfo = ""
+		embeddedData.DataInstances[i].LongTextInfo = ""
+		if embeddingDetails.ImagesRedGreenBlueChannels != nil && embeddingDetails.ImagesGrayscaleSingleChannel != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{embeddingDetails.ImagesRedGreenBlueChannels[i], embeddingDetails.ImagesGrayscaleSingleChannel[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageRGB", "ImageGrayscale"}
+		} else if embeddingDetails.ImagesRedGreenBlueChannels != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{embeddingDetails.ImagesRedGreenBlueChannels[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageRGB"}
+		} else if embeddingDetails.ImagesGrayscaleSingleChannel != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{embeddingDetails.ImagesGrayscaleSingleChannel[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageGrayscale"}
+		} else {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{}
+		}
+
+	}
+	for i := 0; i < len(embeddingDetails.EmbeddingIterations); i++ {
+		for j := 0; j < len(embeddingDetails.EmbeddingIterations[i]); j++ {
+			embeddedData.DataInstances[j].IterationProjections[i] = make([]HyperProjection, len(embeddingDetails.EmbeddingIterations[i][j].VisualSpaceCoordinates))
+			for k := 0; k < len(embeddingDetails.EmbeddingIterations[i][j].VisualSpaceCoordinates); k++ {
+				embeddedData.DataInstances[j].IterationProjections[i][k].X = embeddingDetails.EmbeddingIterations[i][j].VisualSpaceCoordinates[k][0]
+				embeddedData.DataInstances[j].IterationProjections[i][k].Y = embeddingDetails.EmbeddingIterations[i][j].VisualSpaceCoordinates[k][1]
+				embeddedData.DataInstances[j].IterationProjections[i][k].Layer = 0
+				if embeddingDetails.EmbeddingIterations[i][j].Layer == "gray" {
+					embeddedData.DataInstances[j].IterationProjections[i][k].Layer = 1
+				}
+				embeddedData.DataInstances[j].IterationProjections[i][k].ExtraDimensions = []float64{}
+			}
+		}
+	}
+	embeddedData.IsRedGray = true
+	embeddedData.IsStrictRedGray = true
+	embeddedData.RedLayerNumber = new(int32)
+	*(embeddedData.RedLayerNumber) = 0
+	embeddedData.GrayLayerNumber = new(int32)
+	*(embeddedData.GrayLayerNumber) = 1
+	embeddedData.LayerNames = []string{"Red", "Gray"}
+	embeddedData.EmbeddingMethodName = "LVSDE"
+	embeddedData.DataSetName = "Not specified"
+	embeddedData.EmbeddingMethodParameters = strings.Join([]string{embeddingDetails.VisualDensityAdjustmentParameter, embeddingDetails.NumberOfNeighboursForBuildingNeighbourhoodGraph, embeddingDetails.PreliminaryToThirtyDimensionsUMAP}, ",")
+	embeddedData.HasImages = embeddingDetails.ImagesGrayscaleSingleChannel != nil || embeddingDetails.ImagesRedGreenBlueChannels != nil
+	embeddedData.HasShortTextInfo = false
+	embeddedData.HasLongTextInfo = false
+	embeddedData.HasMultipleClassNumbersPerDataInstance = false
+	embeddedData.SingleClassLabels = embeddingDetails.ClassLabels
+	embeddedData.ExtraClassesLabels = [][]string{}
+	return embeddedData
 }
