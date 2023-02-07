@@ -56,12 +56,12 @@ func RunPythonFunction(functionCode string, functionName string, functionParamet
 	functionObject := C.PyObject_GetAttrString(moduleObject, functionNameC)
 	defer C.Py_DecRef(functionObject)
 
-	functionParameterObject := C.PyTuple_New(C.long(functionParameterSize))
+	functionParameterObject := C.PyTuple_New(CastNumberFromToC(functionParameterSize))
 	defer C.Py_DecRef(functionParameterObject)
 
 	for i := 0; i < functionParameterSize; i++ {
 		functionParameterTempObject := C.PyFloat_FromDouble(C.double(functionParameter[i]))
-		C.PyTuple_SetItem(functionParameterObject, C.long(i), functionParameterTempObject)
+		C.PyTuple_SetItem(functionParameterObject, CastNumberFromToC(i), functionParameterTempObject)
 	}
 
 	functionReturnObject := C.PyObject_CallObject(functionObject, functionParameterObject)
@@ -75,7 +75,7 @@ func RunPythonFunction(functionCode string, functionName string, functionParamet
 	functionOutput := make([]float64, functionOutputSize)
 
 	for i := 0; i < functionOutputSize; i++ {
-		functionOutputTempObject := C.PyTuple_GetItem(functionReturnObject, C.long(i))
+		functionOutputTempObject := C.PyTuple_GetItem(functionReturnObject, CastNumberFromToC(i))
 		functionOutput[i] = float64(C.PyFloat_AsDouble(functionOutputTempObject))
 
 	}
