@@ -47,11 +47,12 @@ CGO_ENABLED, CGO_CFLAGS, CGO_LDFLAGS and CC
 
 Run guide:
 To run make sure PYTHONHOME environmental variable in set correctly and umap-learn Python library is installed.
+Also set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION environmental variable to cpp.
 On Windows, also make sure the location of python310.dll such as C:\Users\TheUser\miniconda3\envs\dev-env is in PATH environmental variable.
 */
 func main() {
 
-	fmt.Println("Chocolate LVSDE 1.17")
+	fmt.Println("Chocolate LVSDE 1.18")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")

@@ -298,6 +298,7 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 			functionCode := `
 def SomeDimensionalityReductions(*x):
 	import sys
+	output=[]
 	try:
 		numberOfDataAbstractionUnits=int(x[0])
 		numberOfDataAbstractionUnitsOutput=int(x[1])
@@ -311,8 +312,7 @@ def SomeDimensionalityReductions(*x):
 		import umap
 		from sklearn.manifold import TSNE
 		import time
-		input=np.array(input)
-		output=[]`
+		input=np.array(input)`
 
 			if compareWithOtherMethods {
 				functionCode += comparisonPythonCode
@@ -484,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.16"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.18"
 
 		lastIteration := 1829
 

@@ -313,24 +313,24 @@ func WriteEmbeddingToFile(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbs
 					if redLayerOrNA {
 						if dataAbstractionUnit.ImageRGB == nil {
 							image := dataAbstractionUnit.CreateImageGrayscaleRed()
-							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 						} else {
 							image := dataAbstractionUnit.CreateImageRGB()
-							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 							context.SetRGB(1, 0, 0)
-							context.DrawRectangle(x-float64(dataAbstractionUnit.ImageWidth)/2, y+float64(dataAbstractionUnit.ImageHeight)/2, float64(dataAbstractionUnit.ImageWidth), float64(dataAbstractionUnit.ImageHeight))
+							context.DrawRectangle(x-float64(dataAbstractionUnit.ImageWidth)/2, y-float64(dataAbstractionUnit.ImageHeight)/2, float64(dataAbstractionUnit.ImageWidth), float64(dataAbstractionUnit.ImageHeight))
 							context.SetLineWidth(2.0)
 							context.Stroke()
 						}
 					} else {
 						if dataAbstractionUnit.ImageRGB == nil {
 							image := dataAbstractionUnit.CreateImageGrayscaleGray()
-							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 						} else {
 							image := dataAbstractionUnit.CreateImageRGB()
-							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+							context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 							context.SetRGB(0.5, 0.5, 0.5)
-							context.DrawRectangle(x-float64(dataAbstractionUnit.ImageWidth)/2, y+float64(dataAbstractionUnit.ImageHeight)/2, float64(dataAbstractionUnit.ImageWidth), float64(dataAbstractionUnit.ImageHeight))
+							context.DrawRectangle(x-float64(dataAbstractionUnit.ImageWidth)/2, y-float64(dataAbstractionUnit.ImageHeight)/2, float64(dataAbstractionUnit.ImageWidth), float64(dataAbstractionUnit.ImageHeight))
 							context.SetLineWidth(2.0)
 							context.Stroke()
 						}
@@ -338,10 +338,10 @@ func WriteEmbeddingToFile(dataAbstractionUnitVisibilitiesToBeShuffled []*DataAbs
 				} else if colouring == 3 {
 					if dataAbstractionUnit.ImageRGB == nil {
 						image := dataAbstractionUnit.CreateImageGrayscale()
-						context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+						context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 					} else {
 						image := dataAbstractionUnit.CreateImageRGB()
-						context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y+float64(dataAbstractionUnit.ImageHeight)/2))
+						context.DrawImage(image, int(x-float64(dataAbstractionUnit.ImageWidth)/2), int(y-float64(dataAbstractionUnit.ImageHeight)/2))
 					}
 
 				} else if colouring == 2 {
