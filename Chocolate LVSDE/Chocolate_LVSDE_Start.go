@@ -49,7 +49,7 @@ import (
 */
 func main() {
 
-	fmt.Println("Chocolate LVSDE 1.15")
+	fmt.Println("Chocolate LVSDE 1.16")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
 	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")

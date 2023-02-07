@@ -489,3 +489,60 @@ func (embeddingDetails *EmbeddingDetails) ToEmbeddedData() *EmbeddedData {
 	embeddedData.ExtraClassesLabels = [][]string{}
 	return embeddedData
 }
+
+func EmbeddedDataFromCompareEmbedding(compareEmbeddingMethodName string, compareEmbedding []*DataAbstractionUnitVisibility, mainEmbeddingDetails *EmbeddingDetails) *EmbeddedData {
+	embeddedData := new(EmbeddedData)
+
+	embeddedData.FileFormat = "Versatile Cartesian Embedded Data File Format (VCED)"
+	embeddedData.FileStructureVersion = []int32{1, 0, 0}
+	embeddedData.DataInstances = make([]HyperDataAbstractionUnits, len(compareEmbedding))
+	for i := 0; i < len(compareEmbedding); i++ {
+		embeddedData.DataInstances[i].IterationProjections = make([][]HyperProjection, 1)
+		embeddedData.DataInstances[i].ZeroBasedIndex = compareEmbedding[i].DataAbstractionUnitNumber
+		embeddedData.DataInstances[i].SingleClassNumber = compareEmbedding[i].ClassLabelNumber
+		embeddedData.DataInstances[i].ExtraClassNumbers = []int32{}
+		embeddedData.DataInstances[i].ShortTextInfo = ""
+		embeddedData.DataInstances[i].LongTextInfo = ""
+		if mainEmbeddingDetails.ImagesRedGreenBlueChannels != nil && mainEmbeddingDetails.ImagesGrayscaleSingleChannel != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{mainEmbeddingDetails.ImagesRedGreenBlueChannels[i], mainEmbeddingDetails.ImagesGrayscaleSingleChannel[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageRGB", "ImageGrayscale"}
+		} else if mainEmbeddingDetails.ImagesRedGreenBlueChannels != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{mainEmbeddingDetails.ImagesRedGreenBlueChannels[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageRGB"}
+		} else if mainEmbeddingDetails.ImagesGrayscaleSingleChannel != nil {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{mainEmbeddingDetails.ImagesGrayscaleSingleChannel[i]}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{"ImageGrayscale"}
+		} else {
+			embeddedData.DataInstances[i].BinaryInfo = [][]uint8{}
+			embeddedData.DataInstances[i].BinaryInfoTypes = []string{}
+		}
+
+	}
+	for i := 0; i < len(compareEmbedding); i++ {
+		embeddedData.DataInstances[i].IterationProjections[0] = make([]HyperProjection, len(compareEmbedding[i].VisualSpaceCoordinates))
+		for j := 0; j < len(compareEmbedding[i].VisualSpaceCoordinates); j++ {
+			embeddedData.DataInstances[i].IterationProjections[0][j].X = compareEmbedding[i].VisualSpaceCoordinates[j][0]
+			embeddedData.DataInstances[i].IterationProjections[0][j].Y = compareEmbedding[i].VisualSpaceCoordinates[j][1]
+			embeddedData.DataInstances[i].IterationProjections[0][j].Layer = 0
+			embeddedData.DataInstances[i].IterationProjections[0][j].ExtraDimensions = []float64{}
+		}
+
+	}
+	embeddedData.IsRedGray = false
+	embeddedData.IsStrictRedGray = false
+	embeddedData.RedLayerNumber = new(int32)
+	*(embeddedData.RedLayerNumber) = 0
+	embeddedData.GrayLayerNumber = new(int32)
+	*(embeddedData.GrayLayerNumber) = 1
+	embeddedData.LayerNames = []string{"Red", "Gray"}
+	embeddedData.EmbeddingMethodName = compareEmbeddingMethodName
+	embeddedData.DataSetName = "Not specified"
+	embeddedData.EmbeddingMethodParameters = ""
+	embeddedData.HasImages = mainEmbeddingDetails.ImagesGrayscaleSingleChannel != nil || mainEmbeddingDetails.ImagesRedGreenBlueChannels != nil
+	embeddedData.HasShortTextInfo = false
+	embeddedData.HasLongTextInfo = false
+	embeddedData.HasMultipleClassNumbersPerDataInstance = false
+	embeddedData.SingleClassLabels = mainEmbeddingDetails.ClassLabels
+	embeddedData.ExtraClassesLabels = [][]string{}
+	return embeddedData
+}

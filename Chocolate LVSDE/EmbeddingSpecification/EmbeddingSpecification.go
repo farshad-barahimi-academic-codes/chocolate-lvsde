@@ -120,7 +120,7 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 			panic("Not finished successfully. Output directory cannot be created because it exists.")
 		}
 
-		coloursList := []string{"#8AB9F1", "#6F4E37", "#00FF00", "#8B008B", "#00356B", "#E1A95F", "#4F7942", "#FF66CC", "#F4C430", "#8806CE"}
+		coloursList := []string{"#8AB9F1", "#6F4E37", "#00FF00", "#8B008B", "#00356B", "#c24100", "#4F7942", "#FF66CC", "#F4C430", "#8806CE"}
 		if embeddingSpecification.ColoursList != nil {
 			coloursList = embeddingSpecification.ColoursList
 		}
@@ -484,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.15"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.16"
 
 		lastIteration := 1829
 
@@ -580,6 +580,20 @@ def SomeDimensionalityReductions(*x):
 			jsonBytes, _ = json.MarshalIndent(embeddingCompare1, "", "\t")
 			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "compare_embedding.json"), jsonBytes, FileReadingOrWriting.Chmod)
 
+			bsonBytes, _ = bson.Marshal(DataAbstraction.EmbeddedDataFromCompareEmbedding("UMAP", embeddingCompare1, embeddingDetails))
+			zipFile, err = os.Create(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "UMAP embedding", "embedded_data.VCED"))
+			if err != nil {
+				panic("Not finished successfully.")
+			}
+			zipWriter = zip.NewWriter(zipFile)
+			writer, err = zipWriter.Create("embedded_data.VCED.uncompressed")
+			if err != nil {
+				panic("Not finished successfully.")
+			}
+			writer.Write(bsonBytes)
+			zipWriter.Close()
+			zipFile.Close()
+
 			embeddingCompare2 = make([]*DataAbstraction.DataAbstractionUnitVisibility, len(dataAbstractionSet.DataAbstractionUnits))
 
 			for j := 0; j < len(dataAbstractionSet.DataAbstractionUnits); j++ {
@@ -598,6 +612,20 @@ def SomeDimensionalityReductions(*x):
 
 			jsonBytes, _ = json.MarshalIndent(embeddingCompare2, "", "\t")
 			ioutil.WriteFile(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "compare_embedding.json"), jsonBytes, FileReadingOrWriting.Chmod)
+
+			bsonBytes, _ = bson.Marshal(DataAbstraction.EmbeddedDataFromCompareEmbedding("t-SNE (Barnes Hut variant)", embeddingCompare2, embeddingDetails))
+			zipFile, err = os.Create(filepath.Join(embeddingSpecification.OutputDirectory, "compare", "t-SNE (Barnes Hut variant) embedding", "embedded_data.VCED"))
+			if err != nil {
+				panic("Not finished successfully.")
+			}
+			zipWriter = zip.NewWriter(zipFile)
+			writer, err = zipWriter.Create("embedded_data.VCED.uncompressed")
+			if err != nil {
+				panic("Not finished successfully.")
+			}
+			writer.Write(bsonBytes)
+			zipWriter.Close()
+			zipFile.Close()
 		}
 
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 {
