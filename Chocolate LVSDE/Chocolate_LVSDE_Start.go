@@ -10,7 +10,7 @@ Farshad Barahimi, "Multi-point dimensionality reduction to improve projection la
 The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
 
 Copyright notice for this code (this implementation of LVSDE):
-Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+Copyright (c) 2022-2023-2023 Farshad Barahimi. Licensed under the MIT license.
 
 "Chocolate LVSDE" is the name of this implementation of LVSDE.
 
@@ -52,9 +52,9 @@ On Windows, also make sure the location of python310.dll such as C:\Users\TheUse
 */
 func main() {
 
-	fmt.Println("Chocolate LVSDE 1.19")
+	fmt.Println("Chocolate LVSDE 1.20")
 	fmt.Println("An implementation of the Layered Vertex Splitting Data Embedding (LVSDE) dimensionality reduction technique.")
-	fmt.Println("Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.")
+	fmt.Println("Copyright (c) 2022-2023 Farshad Barahimi. Licensed under the MIT license.")
 	fmt.Println("")
 
 	args := os.Args

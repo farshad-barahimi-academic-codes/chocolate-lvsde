@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license. -->
+<!-- Copyright (c) 2022-2023 Farshad Barahimi. Licensed under the MIT license. -->
 <!-- The purpose of writing this code is academic. -->
 <html lang="en">
     <head>
@@ -12,7 +12,7 @@
 
         <script type="module">
         /*
-            Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+            Copyright (c) 2022-2023 Farshad Barahimi. Licensed under the MIT license.
             The purpose of writing this code is academic.
         */
 
@@ -317,7 +317,6 @@
             });
 
             document.querySelector("#reduce-overlap-button").addEventListener('click', function () {
-                hideButtons();
                 reduceOverlap(overlapReductionRounds);
             });
 
@@ -830,12 +829,10 @@
             for (let i = 0; i < rounds; i++)
                 reduceOverlapMove(dataCopy)
 
-            let popup = document.querySelector("#overlap-reduced")
+            let popup = document.createElement('div')
 
             popup.style.background = 'white'
             popup.style.border = '2px solid black'
-            popup.style.left = '100px'
-            popup.style.top = '100px'
             popup.style.width = '500px'
             popup.style.height = '500px'
             popup.style.pointerEvents = 'auto'
@@ -853,6 +850,9 @@
             canvasPopup.style.border = '1px solid black'
             popup.replaceChildren(bar, canvasPopup)
             showDataOnCanvas(dataCopy, canvasPopup)
+
+            let popupWindow = window.open('', '', 'width=530,height=530')
+            popupWindow.document.body.appendChild(popup)
         }
 
         function reduceOverlapMove(dataCopy) {
@@ -1397,7 +1397,6 @@
             <canvas id="canvas" style="position:absolute;"></canvas>
             <canvas id="edge-bundling-canvas" style="position:absolute;display:none;pointer-events: none;"></canvas>
             <div id="blue" style="position:absolute;pointer-events: none;"></div>
-            <div id="overlap-reduced" style="position:absolute;pointer-events: none;"></div>
         </div>
     </body>
 </html>

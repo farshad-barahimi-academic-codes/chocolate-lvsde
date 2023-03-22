@@ -4,7 +4,7 @@
 	The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
 
 	Copyright notice for this code (this implementation of LVSDE) and this file:
-	Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+	Copyright (c) 2022-2023 Farshad Barahimi. Licensed under the MIT license.
 
 	All codes in this project including but not limited to this file are written by Farshad Barahimi.
 
@@ -256,18 +256,18 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 		}
 
 		comparisonPythonCode := `
-		print('Performing UMAP to 2 dimensions for comparison...')
+		print('Performing UMAP to 2 dimensions for comparison..., timestamp (Unix nanoseconds): '+str(time.time_ns()))
 		twoDimUMAP=umap.UMAP(n_components=2, random_state=%d%s).fit_transform(input)
 		for i in range(0,numberOfDataAbstractionUnitsOutput):
 			for j in range(0,2):
 				output.append(float(twoDimUMAP[i,j]))
-		print('Two dimensional UMAP for comparison finished.')
-		print('Performing t-SNE to 2 dimensions for comparison...')
+		print('Two dimensional UMAP for comparison finished, timestamp (Unix nanoseconds): '+str(time.time_ns()))
+		print('Performing t-SNE to 2 dimensions for comparison..., timestamp (Unix nanoseconds): '+str(time.time_ns()))
 		twoDimTSNE=TSNE(n_components=2, init='random', learning_rate='auto', method='barnes_hut', random_state=%d%s).fit_transform(input)
 		for i in range(0,numberOfDataAbstractionUnitsOutput):
 			for j in range(0,2):
 				output.append(float(twoDimTSNE[i,j]))
-		print('Two dimensional t-SNE for comparison finished.')`
+		print('Two dimensional t-SNE for comparison finished., timestamp (Unix nanoseconds): '+str(time.time_ns()))`
 
 		if isInputFileDistances {
 			comparisonPythonCode = fmt.Sprintf(comparisonPythonCode, randomState, ", metric='precomputed'", randomState, ", metric='precomputed'")
@@ -280,7 +280,7 @@ func RunEmbeddingSpecifications(embeddingSpecifications []EmbeddingSpecification
 		thirtyDimensionalUmapPythonCode := `
 		print('Performing UMAP to 30 dimensions as a preliminary step...')
 		thirtyDim=umap.UMAP(n_components=30, random_state=%d%s).fit_transform(input)
-		print('Thirty dimensional UMAP as a preliminary step finished.')
+		print('Thirty dimensional UMAP as a preliminary step finished, timestamp (Unix nanoseconds): '+str(time.time_ns()))
 		for i in range(0,numberOfDataAbstractionUnitsOutput):
 			for j in range(0,30):
 				output.append(float(thirtyDim[i,j]))`
@@ -319,7 +319,7 @@ def SomeDimensionalityReductions(*x):
 			}
 			if preliminaryToThirtyDimensionsUMAP {
 				functionCode += `
-		print('LVSDE embedding started at '+time.strftime('%a %b %d %H:%M:%S %Z %Y',time.localtime()))`
+		print('LVSDE embedding started at '+time.strftime('%a %b %d %H:%M:%S %Z %Y',time.localtime())+', timestamp (Unix nanoseconds): '+str(time.time_ns()))`
 				functionCode += thirtyDimensionalUmapPythonCode
 			}
 			functionCode += `
@@ -402,7 +402,7 @@ def SomeDimensionalityReductions(*x):
 				}
 				outputsUsed += 30 * int(numberOfSecondaryDataAbstractionUnits)
 			} else {
-				fmt.Println("LVSDE embedding started at", time.Now().Format(time.UnixDate))
+				fmt.Println("LVSDE embedding started at", time.Now().Format(time.UnixDate), ", timestamp (Unix nanoseconds):", time.Now().UnixMicro())
 			}
 
 			if dataAbstractionSet.DistancesBeforeTransformation != nil {
@@ -449,7 +449,7 @@ def SomeDimensionalityReductions(*x):
 
 		dataEmbeddingTechniqueLVSDE.EmbedData(dataAbstractionSet)
 
-		fmt.Println("Saving to file...,         time:", time.Now().Format(time.UnixDate))
+		fmt.Println("Saving to file...,         time:", time.Now().Format(time.UnixDate), ", timestamp (Unix nanoseconds):", time.Now().UnixMicro())
 
 		embeddingDetails := &dataEmbeddingTechniqueLVSDE.EmbeddingDetails
 		embeddingDetails.ImageWidth = dataAbstractionSet.DataAbstractionUnits[0].ImageWidth
@@ -484,7 +484,7 @@ def SomeDimensionalityReductions(*x):
 			}
 		}
 
-		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.18"
+		embeddingDetails.VersionOfUsedChocolateLVSDE = "1.20"
 
 		lastIteration := 1829
 
@@ -546,7 +546,7 @@ def SomeDimensionalityReductions(*x):
 		FileReadingOrWriting.WriteLegendFileHtml(filepath.Join(embeddingSpecification.OutputDirectory, "legend.html"), classLabels, coloursList)
 		FileReadingOrWriting.WriteShowFileHtml(embeddingSpecification.OutputDirectory, embeddingDetails.EmbeddingIterations[lastIteration])
 
-		fmt.Println("Embedding and saving to file finished on", time.Now().Format(time.UnixDate))
+		fmt.Println("Embedding and saving to file finished on", time.Now().Format(time.UnixDate), ", timestamp (Unix nanoseconds):", time.Now().UnixMicro())
 
 		if len(embeddingSpecification.EvaluationNeighbourhoodSizes) > 0 || compareWithOtherMethods {
 			fmt.Println("Please wait...")

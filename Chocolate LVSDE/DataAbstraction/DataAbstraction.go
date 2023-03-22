@@ -4,7 +4,7 @@
 	The github repository for this project is designated at https://github.com/farshad-barahimi-academic-codes/chocolate-lvsde
 
 	Copyright notice for this code (this implementation of LVSDE) and this file:
-	Copyright (c) 2022 Farshad Barahimi. Licensed under the MIT license.
+	Copyright (c) 2022-2023 Farshad Barahimi. Licensed under the MIT license.
 
 	All codes in this project including but not limited to this file are written by Farshad Barahimi.
 
